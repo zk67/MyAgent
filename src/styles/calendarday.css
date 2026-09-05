@@ -1,0 +1,204 @@
+/* ==========================================================================
+   Cases des jours (.calendar-day) & Cases vides
+   ========================================================================== */
+
+.calendar-day-empty {
+  border: 1.5px dashed transparent;
+  border-radius: 12px;
+  background: transparent;
+}
+
+.calendar-day {
+  position: relative;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: hidden;
+  min-width: 0;
+  min-height: 0;
+  background: var(--surface-days);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+  cursor: pointer;
+}
+
+.calendar-day:hover {
+  background: var(--accent-soft);
+  border-color: #a8c9b8;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(31, 75, 61, 0.12);
+}
+
+/* Bordure plus prononcée pour les jours avec événements */
+.calendar-day.has-events {
+  border-width: 2px;
+  border-color: var(--accent);
+  background: var(--surface);
+}
+
+.calendar-day.has-events:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(31, 75, 61, 0.12);
+}
+
+.calendar-day.is-today {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.calendar-day.is-today:hover {
+  background: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(31, 75, 61, 0.25);
+}
+
+/* ==========================================================================
+   Header du jour (numéro + badge de compte)
+   ========================================================================== */
+
+.day-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.day-number {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.is-today .day-number {
+  color: var(--accent-contrast);
+}
+
+/* Petit rond en haut à droite indiquant le nombre d'événements */
+.event-count-badge {
+  flex-shrink: 0;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-size: 0.62rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.is-today .event-count-badge {
+  background: var(--accent-contrast);
+  color: var(--accent);
+}
+
+/* ==========================================================================
+   Container de l'événement affiché dans la case
+   ========================================================================== */
+
+.day-events-container {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-start;
+}
+
+.calendar-event-card {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  overflow: hidden;
+}
+
+.event-time {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: normal;      /* changé de nowrap → normal */
+  overflow: visible;         /* changé de hidden → visible */
+  text-overflow: unset;      /* plus besoin d'ellipsis */
+  line-height: 1.2;
+}
+
+.is-today .event-time {
+  color: var(--accent-contrast);
+  opacity: 0.85;
+}
+
+/* Titre affiché en entier : on autorise le retour à la ligne (jusqu'à 3 lignes)
+   plutôt que de le tronquer avec des points de suspension */
+.event-title {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.25;
+  white-space: normal;
+  word-break: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.is-today .event-title {
+  color: var(--accent-contrast);
+}
+
+/* ==========================================================================
+   Flèches de navigation entre événements du même jour
+   ========================================================================== */
+
+/* Le conteneur est invisible (pas de fond, pas d'ombre) : seuls les boutons sont visibles */
+.event-nav-arrows {
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.calendar-day:hover .event-nav-arrows {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.event-nav-arrows button {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-primary);
+  font-size: 0.75rem;
+  font-weight: bold;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.event-nav-arrows button:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-contrast);
+}
+
+.is-today .event-nav-arrows button {
+  background: var(--surface);
+}

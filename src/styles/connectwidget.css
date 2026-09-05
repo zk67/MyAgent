@@ -1,0 +1,44 @@
+.calendar-connect {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.calendar-connect-content {
+  text-align: center;
+  max-width: 380px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+  padding: 40px 32px;
+}
+
+.calendar-connect-icon {
+  font-size: 2.5rem;
+  margin-bottom: 16px;
+}
+
+.calendar-connect-content h2 {
+  margin: 0 0 10px;
+  font-size: 1.2rem;
+}
+
+.calendar-connect-content p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin: 0 0 22px;
+}
+
+.connect-button {
+  padding: 11px 22px;
+  border-radius: 12px;
+  border: none;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
