@@ -1,43 +1,105 @@
-# LIL-IA
+# MyAgent
 
-Squelette d'une application web monopage avec Next.js, React et TypeScript.
+MyAgent is a Next.js-based assistant dashboard that combines a chat experience, Google Calendar integration, and connection-aware UI in one web app.
 
-## Stack
+## What it does
 
-- Next.js 16.3.3
-- React 19.2
+- Shows a dashboard that switches between a connection screen and the main workspace
+- Checks authentication state through backend API routes
+- Displays a calendar panel, overview metrics, and a chat panel when connected
+- Supports sign-in/out flows for a Google-backed account
+- Refreshes the UI after authentication or event creation
+
+## Tech stack
+
+- Next.js 16
+- React 19
 - TypeScript
 - App Router
-- API Routes via Route Handlers
+- CSS Modules / global CSS styling
+- Google APIs
+- Firebase Admin
 
-## Structure
+## Project structure
 
 ```text
 src/
-├── app/                         # Pages et routage App Router
-│   ├── page.tsx                 # Page principale : chat + calendrier
-│   ├── calendar/page.tsx        # Exemple de route supplémentaire
-│   └── api/                     # Backend HTTP intégré à Next.js
-│       ├── chat/route.ts
-│       └── health/route.ts
-│
-├── components/                  # Composants UI
-├── agent/                       # Logique de l'agent et ses tools
-├── services/                    # LLM et Google Calendar
-├── styles/                      # Styles globaux
-├── types/                       # Types TypeScript partagés
-└── lib/                         # Utilitaires
+├── app/              # Routes, pages, and API handlers
+├── components/       # UI building blocks
+├── styles/           # Global and page styling
+├── lib/              # Shared utilities
+├── services/         # External service integrations
+├── agent/            # Agent-specific logic
+└── types/            # Shared TypeScript types
 ```
 
-## Installation
+## Key features
+
+### Connection-aware home screen
+The main page checks whether the user is connected and renders either:
+- a connect widget when disconnected, or
+- the full workspace when authenticated.
+
+### Workspace layout
+The authenticated view is organized into:
+- a calendar panel,
+- an overview panel with activity metrics, and
+- a chat panel for creating events and interacting with the assistant.
+
+### Authentication flow
+The app listens for auth success messages, rechecks connection state, and refreshes the UI after login/logout actions.
+
+### Google Calendar integration
+The repository includes calendar and chat flows designed to work with Google APIs and server-side route handlers.
+
+## Getting started
+
+### Prerequisites
+
+- Node.js 20+ recommended
+- npm
+
+### Install
 
 ```bash
 npm install
+```
+
+### Run locally
+
+```bash
 npm run dev
 ```
 
-Puis ouvrir http://localhost:3000.
+Then open:
 
-## Important
+```text
+http://localhost:3000
+```
 
-Ce squelette ne contient volontairement aucune clé API. Les intégrations LLM et Google Calendar sont des placeholders à compléter côté serveur.
+### Build for production
+
+```bash
+npm run build
+npm run start
+```
+
+### Lint
+
+```bash
+npm run lint
+```
+
+## Environment setup
+
+This project expects server-side integrations to be configured before the full experience works correctly. In particular, Google and Firebase credentials should be provided through environment variables or deployment secrets.
+
+## Notes
+
+- The app currently relies on backend routes for auth and status checks.
+- If you add new integrations, document the required environment variables here.
+- Consider replacing the placeholder dashboard values with live data as the project evolves.
+
+## License
+
+No license has been specified yet.
