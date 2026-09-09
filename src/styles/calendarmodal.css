@@ -1,0 +1,68 @@
+.calendar-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(29, 29, 31, 0.4);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.calendar-modal-panel {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+  padding: 32px;
+  max-width: 480px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  font-family: var(--font-sans);
+  color: var(--text-primary);
+}
+
+.calendar-modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: var(--surface-days);
+  border-radius: 50%;
+  color: var(--text-secondary);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.calendar-modal-close:hover {
+  background: var(--border);
+  color: var(--text-primary);
+}
+
+.calendar-modal-panel .calendar-event-title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 560;
+  margin: 0 0 8px;
+  padding-right: 32px;
+}
+
+.calendar-modal-panel .calendar-event-time {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.calendar-modal-panel .calendar-event-description {
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.5;
+}

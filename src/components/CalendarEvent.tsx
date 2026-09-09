@@ -1,165 +1,83 @@
-'use client';
-import '@/styles/calendar.css';
+// 'use client';
+// import '@/styles/calendar.css';
+// import { CalendarEvent as CalendarEventData } from "@/types/types";
 
-export type CalendarEventData = {
-  id: string;
+// type CalendarEventProps = {
+//   event: CalendarEventData;
+//   compact?: boolean;
+// };
 
-  summary?: string;
-  description?: string;
-  location?: string;
+// export function CalendarEvent({
+//   event,
+//   compact = false,
+// }: CalendarEventProps) {
 
-  start: {
-    dateTime?: string;
-    date?: string;
-    timeZone?: string;
-  };
+//   const title = event.summary || '(Sans titre)';
 
-  end: {
-    dateTime?: string;
-    date?: string;
-    timeZone?: string;
-  };
+//   // Google peut utiliser dateTime OU date pour les événements toute la journée
+//   const startValue = event.start.dateTime || event.start.date;
+//   const endValue = event.end.dateTime || event.end.date;
 
-  status?: string;
+//   const startDate = startValue ? new Date(startValue) : null;
+//   const endDate = endValue ? new Date(endValue) : null;
 
-  htmlLink?: string;
+//   const isAllDay = !!event.start.date;
 
-  creator?: {
-    email?: string;
-    displayName?: string;
-  };
+//   const formatTime = (date: Date | null) => {
+//     if (!date) return '';
 
-  organizer?: {
-    email?: string;
-    displayName?: string;
-  };
+//     return date.toLocaleTimeString('fr-CA', {
+//       hour: '2-digit',
+//       minute: '2-digit',
+//     });
+//   };
 
-  attendees?: Array<{
-    email: string;
-    displayName?: string;
-    responseStatus?: string;
-    optional?: boolean;
-  }>;
+//   // Version compacte pour la vue Mois
+//   if (compact) {
+//     return (
+//       <div className="calendar-event calendar-event-compact">
+//         {!isAllDay && startDate && (
+//           <span className="calendar-event-time">
+//             {formatTime(startDate)}
+//           </span>
+//         )}
 
-  conferenceData?: {
-    entryPoints?: Array<{
-      entryPointType?: string;
-      uri?: string;
-      label?: string;
-    }>;
-  };
+//         <span className="calendar-event-title">
+//           {title}
+//         </span>
+//       </div>
+//     );
+//   }
 
-  reminders?: {
-    useDefault?: boolean;
+//   // Version complète
+//   return (
+//     <div className="calendar-event">
 
-    overrides?: Array<{
-      method?: string;
-      minutes?: number;
-    }>;
-  };
-};
+//       <div className="calendar-event-main">
 
-type CalendarEventProps = {
-  event: CalendarEventData;
-  compact?: boolean;
-};
+//         <h3 className="calendar-event-title">
+//           {title}
+//         </h3>
 
-export function CalendarEvent({
-  event,
-  compact = false,
-}: CalendarEventProps) {
+//         <div className="calendar-event-time">
+//           {isAllDay ? (
+//             <span>Toute la journée</span>
+//           ) : (
+//             <span>
+//               {formatTime(startDate)}
+//               {endDate && ` – ${formatTime(endDate)}`}
+//             </span>
+//           )}
+//         </div>
 
-  const title = event.summary || '(Sans titre)';
+//       </div>
 
-  // Google peut utiliser dateTime OU date pour les événements toute la journée
-  const startValue = event.start.dateTime || event.start.date;
-  const endValue = event.end.dateTime || event.end.date;
+//       {event.description && (
+//         <p className="calendar-event-description">
+//           {event.description}
+//         </p>
+//       )}a
 
-  const startDate = startValue ? new Date(startValue) : null;
-  const endDate = endValue ? new Date(endValue) : null;
-
-  const isAllDay = !!event.start.date;
-
-  const formatTime = (date: Date | null) => {
-    if (!date) return '';
-
-    return date.toLocaleTimeString('fr-CA', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
-  // Version compacte pour la vue Mois
-  if (compact) {
-    return (
-      <div className="calendar-event calendar-event-compact">
-        {!isAllDay && startDate && (
-          <span className="calendar-event-time">
-            {formatTime(startDate)}
-          </span>
-        )}
-
-        <span className="calendar-event-title">
-          {title}
-        </span>
-      </div>
-    );
-  }
-
-  // Version complète
-  return (
-    <div className="calendar-event">
-
-      <div className="calendar-event-main">
-
-        <h3 className="calendar-event-title">
-          {title}
-        </h3>
-
-        <div className="calendar-event-time">
-          {isAllDay ? (
-            <span>Toute la journée</span>
-          ) : (
-            <span>
-              {formatTime(startDate)}
-              {endDate && ` – ${formatTime(endDate)}`}
-            </span>
-          )}
-        </div>
-
-      </div>
-
-      {event.location && (
-        <div className="calendar-event-location">
-          📍 {event.location}
-        </div>
-      )}
-
-      {event.description && (
-        <p className="calendar-event-description">
-          {event.description}
-        </p>
-      )}
-
-      {event.attendees && event.attendees.length > 0 && (
-        <div className="calendar-event-attendees">
-
-          <span className="calendar-event-label">
-            Participants
-          </span>
-
-          {event.attendees.map((attendee) => (
-            <div
-              className="calendar-attendee"
-              key={attendee.email}
-            >
-              {attendee.displayName || attendee.email}
-            </div>
-          ))}
-
-        </div>
-      )}
-
-    </div>
-  );
-}
+//     </div>
+//   );
+// }

@@ -6,6 +6,9 @@
   border: 1.5px dashed transparent;
   border-radius: 12px;
   background: transparent;
+  user-select: none;
+  -webkit-user-select: none; 
+  -moz-user-select: none;   
 }
 
 .calendar-day {
@@ -22,6 +25,9 @@
   background: var(--surface-days);
   transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, border-color 0.15s ease;
   cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;   
 }
 
 .calendar-day:hover {
@@ -36,6 +42,7 @@
   border-width: 2px;
   border-color: var(--accent);
   background: var(--surface);
+  cursor: pointer;
 }
 
 .calendar-day.has-events:hover {
@@ -146,6 +153,7 @@
   white-space: normal;
   word-break: break-word;
   display: -webkit-box;
+  line-clamp: 3;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
@@ -202,3 +210,4 @@
 .is-today .event-nav-arrows button {
   background: var(--surface);
 }
+

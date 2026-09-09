@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import "@/styles/calendarday.css";
 import { CalendarEvent } from "@/types/types";
+import { CalendarModal } from "./CalendarModal";
 
 type CalendarDayProps = {
   day: number | null;
@@ -12,12 +13,12 @@ type CalendarDayProps = {
 
 export function CalendarDay({ day, events, isToday }: CalendarDayProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   if (!day) {
     return <div className="calendar-day-empty" />;
   }
 
-  // Trie les événements par heure pour que le premier de la journée s'affiche en premier
   const sortedEvents = [...events].sort((a, b) => {
     const timeA = a.start?.dateTime ?? a.start?.date ?? '';
     const timeB = b.start?.dateTime ?? b.start?.date ?? '';
@@ -41,6 +42,11 @@ export function CalendarDay({ day, events, isToday }: CalendarDayProps) {
     setCurrentIndex((prev) => (prev < sortedEvents.length - 1 ? prev + 1 : 0));
   };
 
+  const handleDayClick = () => {
+    if (sortedEvents.length === 0) return;
+    setIsModalOpen(true);
+  };
+
   const classes = ['calendar-day'];
   if (sortedEvents.length > 0) classes.push('has-events');
   if (isToday) classes.push('is-today');
@@ -48,12 +54,14 @@ export function CalendarDay({ day, events, isToday }: CalendarDayProps) {
   const currentEvent = sortedEvents[currentIndex];
 
   return (
-    <div className={classes.join(' ')}>
+    <div className={classes.join(' ')} onClick={handleDayClick}>
       <div className="day-header">
         <span className="day-number">{day}</span>
 
         {sortedEvents.length > 0 && (
-          <span className="event-count-badge">{sortedEvents.length}</span>
+          <span className="event-count-badge">
+            {currentIndex + 1}/{sortedEvents.length}
+          </span>
         )}
       </div>
 
@@ -80,6 +88,13 @@ export function CalendarDay({ day, events, isToday }: CalendarDayProps) {
           </div>
         )}
       </div>
+
+      {isModalOpen && currentEvent && (
+        <CalendarModal
+          event={currentEvent}
+          onClose={() => setIsModalOpen(false)}
+        />
+      )}
     </div>
   );
 }

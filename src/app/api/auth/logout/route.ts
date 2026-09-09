@@ -1,9 +1,8 @@
-import { NextRequest } from 'next/server';
 import { deleteTokens } from '@/services/calendarService';
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
-export async function POST(request : NextRequest) {
+export async function POST() {
     const cookieStore = await cookies();
     const session_id = cookieStore.get('session_id')?.value;
 
