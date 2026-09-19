@@ -27,6 +27,14 @@ export async function GET(request: Request) {
     return new Response('Invalid OAuth state', { status: 400});
   }
   const tokens = await getGoogleTokens(code);
-  saveTokens(sessionId, {accessToken: tokens.access_token, refreshToken: tokens.refresh_token, expiresAt: tokens.expiry_date } as CalendarTokens);
+  if (!tokens.access_token) {
+    return new Response('Google did not return an access token', { status: 502 });
+  }
+
+  saveTokens(sessionId, {
+    accessToken: tokens.access_token,
+    refreshToken: tokens.refresh_token,
+    expiresAt: tokens.expiry_date,
+  } as CalendarTokens);
   return NextResponse.redirect(new URL('/authSuccess', request.url));
 }

@@ -42,7 +42,11 @@
   flex-direction: column;
   gap: 20px;
   min-height: 0;
-  overflow-y: auto;
+  overflow: hidden;
+}
+
+.side-column:not(.create-mode) .chat-panel {
+  flex: 0 0 500px;
 }
 
 /* Panel de base, réutilisé par Overview/Calendar/Chat via className="panel" */

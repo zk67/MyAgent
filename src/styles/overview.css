@@ -1,15 +1,16 @@
 .overview-card {
-  flex: 0 0 auto;
+  flex: 0 1 42%;
+  min-height: 0;
   max-height: 42%;
   padding: 16px 18px;
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 .overview-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .overview-header h2 {
@@ -29,16 +30,16 @@
 /* --- Stats compactes en ligne --- */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  margin-bottom: 14px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 10px;
 }
 
 .stat-cell {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
+  gap: 6px;
+  padding: 7px 8px;
   border: 1px solid var(--border);
   border-radius: 10px;
   background: var(--bg);
@@ -90,7 +91,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .today-events-header h3 {
@@ -103,9 +104,11 @@
 }
 
 .today-events-list {
+  min-height: 0;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .today-event-row {
@@ -114,7 +117,7 @@
   gap: 8px;
   font-size: 0.8rem;
   color: var(--text-primary);
-  padding: 6px 8px;
+  padding: 5px 8px;
   border-radius: 8px;
   background: var(--bg);
 }
@@ -150,4 +153,14 @@
   background: var(--surface);
   color: var(--text-primary);
   cursor: pointer;
+}
+
+.no-events-message {
+  margin: 0;
+  padding: 8px;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  text-align: center;
+  background: var(--bg);
+  border-radius: 8px;
 }

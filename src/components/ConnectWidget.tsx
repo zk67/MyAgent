@@ -14,18 +14,17 @@ export function ConnectWidget() {
         <div className="calendar-connect-icon">
           📅
         </div>
-        <h2>Connectez votre calendrier</h2>
+        <h2>Connect your calendar</h2>
 
         <p>
-          Connectez votre Google Calendar pour permettre à
-          lilIA de consulter et gérer votre agenda.
+          Connect your Google Calendar so lilIA can view and manage your schedule.
         </p>
 
         <button
           className="connect-button"
           onClick={handleConnect}
         >
-          Connecter Google Calendar
+          Connect Google Calendar
         </button>
       </div>
     </div>

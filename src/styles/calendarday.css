@@ -84,39 +84,18 @@
   color: var(--accent-contrast);
 }
 
-/* Petit rond en haut à droite indiquant le nombre d'événements */
-.event-count-badge {
-  flex-shrink: 0;
-  min-width: 16px;
-  height: 16px;
-  padding: 0 4px;
-  border-radius: 999px;
-  background: var(--accent);
-  color: var(--accent-contrast);
-  font-size: 0.62rem;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-}
-
-.is-today .event-count-badge {
-  background: var(--accent-contrast);
-  color: var(--accent);
-}
-
 /* ==========================================================================
    Container de l'événement affiché dans la case
    ========================================================================== */
 
 .day-events-container {
   flex: 1;
+  position: relative;
   min-width: 0;
   min-height: 0;
   overflow: hidden;
   display: flex;
-  align-items: flex-start;
+  align-items: stretch;
 }
 
 .calendar-event-card {
@@ -126,6 +105,111 @@
   flex-direction: column;
   gap: 1px;
   overflow: hidden;
+}
+
+.calendar-event-card--month {
+  position: relative;
+  height: 100%;
+  box-sizing: border-box;
+  gap: 3px;
+  padding: 7px 8px 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.calendar-event-card--month::before {
+  content: '';
+  position: absolute;
+  inset: 6px auto 6px 4px;
+  width: 3px;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+.calendar-event-card--month:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  box-shadow: 0 3px 8px rgba(31, 75, 61, 0.12);
+}
+
+.calendar-event-card--month .event-time {
+  padding-left: 1px;
+  color: var(--accent);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.calendar-event-card--month .event-title {
+  font-size: 0.7rem;
+  font-weight: 650;
+  line-height: 1.2;
+  -webkit-line-clamp: 3;
+}
+
+.is-today .calendar-event-card--month {
+  border-color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.94);
+}
+
+.is-today .calendar-event-card--month::before {
+  background: var(--accent);
+}
+
+.is-today .calendar-event-card--month .event-time {
+  color: var(--accent);
+}
+
+.is-today .calendar-event-card--month .event-title {
+  color: var(--text-primary);
+}
+
+.calendar-event-card--list {
+  position: relative;
+  gap: 4px;
+  padding: 9px 10px 9px 13px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.calendar-event-card--list::before {
+  content: '';
+  position: absolute;
+  inset: 7px auto 7px 5px;
+  width: 3px;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+.calendar-event-card--list:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  box-shadow: 0 4px 10px rgba(31, 75, 61, 0.1);
+  transform: translateY(-1px);
+}
+
+.calendar-event-card--list .event-time {
+  color: var(--accent);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.calendar-event-card--list .event-title {
+  font-size: 0.78rem;
+  font-weight: 650;
+  line-height: 1.25;
+  -webkit-line-clamp: 2;
 }
 
 .event-time {
@@ -163,47 +247,38 @@
   color: var(--accent-contrast);
 }
 
-/* ==========================================================================
-   Flèches de navigation entre événements du même jour
-   ========================================================================== */
-
-/* Le conteneur est invisible (pas de fond, pas d'ombre) : seuls les boutons sont visibles */
+/* Navigation compacte intégrée à la carte active. */
 .event-nav-arrows {
-  position: absolute;
-  bottom: 4px;
-  left: 50%;
-  transform: translateX(-50%);
+  align-self: stretch;
+  justify-content: center;
   display: flex;
-  gap: 4px;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.15s ease;
-}
-
-.calendar-day:hover .event-nav-arrows {
-  opacity: 1;
-  pointer-events: auto;
+  align-items: center;
+  gap: 2px;
+  margin-top: auto;
+  padding-top: 4px;
+  color: var(--text-tertiary);
+  font-size: 0.58rem;
+  font-weight: 700;
 }
 
 .event-nav-arrows button {
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text-primary);
-  font-size: 0.75rem;
-  font-weight: bold;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font-size: 0.9rem;
+  font-weight: 700;
   width: 18px;
-  height: 18px;
+  height: 16px;
   border-radius: 50%;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  line-height: 1;
 }
 
 .event-nav-arrows button:hover {
   background: var(--accent);
-  border-color: var(--accent);
   color: var(--accent-contrast);
 }
 

@@ -7,18 +7,16 @@ type TodayEvent = {
 };
 
 type OverviewProps = {
-  unreadEmails: number;
+  eventsToday: number;
   eventsThisWeek: number;
-  todaysEventsCount: number;
-  tomorrowsEventsCount: number;
+  eventsNextTwoWeeks: number;
   todaysEvents: TodayEvent[];
 };
 
 export function Overview({
-  unreadEmails,
+  eventsToday,
   eventsThisWeek,
-  todaysEventsCount,
-  tomorrowsEventsCount,
+  eventsNextTwoWeeks,
   todaysEvents,
 }: OverviewProps) {
   return (
@@ -30,10 +28,10 @@ export function Overview({
 
       <div className="stats-grid">
         <div className="stat-cell">
-          <div className="stat-icon">✉️</div>
+          <div className="stat-icon">●</div>
           <div className="stat-text">
-            <span className="stat-value">{unreadEmails}</span>
-            <span className="stat-label">Unread</span>
+            <span className="stat-value">{eventsToday}</span>
+            <span className="stat-label">Today</span>
           </div>
         </div>
 
@@ -46,18 +44,10 @@ export function Overview({
         </div>
 
         <div className="stat-cell">
-          <div className="stat-icon">📅</div>
+          <div className="stat-icon">↗</div>
           <div className="stat-text">
-            <span className="stat-value">{todaysEventsCount}</span>
-            <span className="stat-label">Today</span>
-          </div>
-        </div>
-
-        <div className="stat-cell">
-          <div className="stat-icon">📅</div>
-          <div className="stat-text">
-            <span className="stat-value">{tomorrowsEventsCount}</span>
-            <span className="stat-label">Tomorrow</span>
+            <span className="stat-value">{eventsNextTwoWeeks}</span>
+            <span className="stat-label">Next 2 weeks</span>
           </div>
         </div>
       </div>
@@ -67,14 +57,14 @@ export function Overview({
       </div>
 
       <div className="today-events-list">
-        {todaysEvents.map((event) => (
+        {todaysEvents.length > 0 ? todaysEvents.map((event) => (
           <div className="today-event-row" key={event.id}>
-            <span className="event-dot" />
             <span className="event-time">{event.time}</span>
             <span className="event-title">{event.title}</span>
           </div>
-        ))}
-        <button className="view-all-button">View all events</button>
+        )) : (
+          <p className="no-events-message">No events scheduled today</p>
+        )}
       </div>
     </div>
   );

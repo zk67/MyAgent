@@ -2,33 +2,23 @@ import '@/styles/navbar.css';
 
 type NavbarProps = {
   userName: string;
-  activeTab: 'overview' | 'journal' ;
+  activeTab: 'dashboard' | 'create';
+  onTabChange: (tab: 'dashboard' | 'create') => void;
   onDisconnect: () => void;
   isConnected : boolean;
 };
 
-export function Navbar({ userName, activeTab, onDisconnect, isConnected }: NavbarProps) {
-  const initial = userName.charAt(0).toUpperCase();
-
+export function Navbar({ activeTab, onTabChange, onDisconnect, isConnected }: NavbarProps) {
   return (
     <>
       <header className="top-header">
         <div className="brand">
-          <div className="brand-icon">
-
-            {/* icône envoi/avion en papier */}
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M22 2 11 13" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M22 2 15 22l-4-9-9-4 20-7Z" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </div>
           <div className="brand-text">
-            <strong>NOVA</strong>
-            <span className="divider">|</span>
-            <span className="sub">AI Assistant</span>
+            <strong>My Secretary Agent</strong>
           </div>
         </div>
 
+        {isConnected && (
         <div className="header-right">
           <button className="icon-button" aria-label="Notifications">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -38,50 +28,47 @@ export function Navbar({ userName, activeTab, onDisconnect, isConnected }: Navba
             <span className="notif-dot" />
           </button>
 
-          <div className="user-menu">
-            <div className="user-avatar">{initial}</div>
-            <span className="user-name">{userName}</span>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="m6 9 6 6 6-6" />
-            </svg>
-          </div>
         </div>
+        )}
       </header>
 
-      <div className="toolbar">
+      {isConnected && <div className="toolbar">
         <div className="tabs">
 
-            <button className={`tab-button ${activeTab === 'overview' ? 'active' : ''}`}>
+            <button
+              className={`tab-button ${activeTab === 'dashboard' ? 'active' : ''}`}
+              onClick={() => onTabChange('dashboard')}
+            >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <rect x="3" y="3" width="7" height="7" rx="1" />
                 <rect x="14" y="3" width="7" height="7" rx="1" />
                 <rect x="14" y="14" width="7" height="7" rx="1" />
                 <rect x="3" y="14" width="7" height="7" rx="1" />
                 </svg>
-                Overview
+                Dashboard
             </button>
 
-            <button className={`tab-button ${activeTab === 'journal' ? 'active' : ''}`}>
+            <button
+              className={`tab-button ${activeTab === 'create' ? 'active' : ''}`}
+              onClick={() => onTabChange('create')}
+            >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
                 </svg>
-                Journal
+                New
             </button>
 
         </div>
 
         <div className="toolbar-right">
-            
-            {isConnected && (
             <button className="disconnect-button" onClick={onDisconnect}>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" strokeLinecap="round" strokeLinejoin="round" />
                 <path d="M16 17l5-5-5-5" strokeLinecap="round" strokeLinejoin="round" />
                 <path d="M21 12H9" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
-                Déconnecter
+                Log out
             </button>
-            )}
 
           <button className="settings-button">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -92,6 +79,7 @@ export function Navbar({ userName, activeTab, onDisconnect, isConnected }: Navba
           </button>
         </div>
       </div>
+      }
     </>
   );
 }

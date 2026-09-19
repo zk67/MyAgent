@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import '@/styles/base.css'
 
 export const metadata: Metadata = {
-  title: 'LIL-IA Calendar Assistant',
+  title: 'MySecretaryAgent',
   description: 'AI-powered Google Calendar assistant',
 };
 

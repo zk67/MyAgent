@@ -26,7 +26,7 @@ export function CalendarDay({ day, events, isToday }: CalendarDayProps) {
   });
 
   const formatTime = (dateTimeStr?: string, dateStr?: string) => {
-    if (dateStr) return 'Toute la journée';
+    if (dateStr) return 'All day';
     if (!dateTimeStr) return '';
     const date = new Date(dateTimeStr);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
@@ -58,33 +58,28 @@ export function CalendarDay({ day, events, isToday }: CalendarDayProps) {
       <div className="day-header">
         <span className="day-number">{day}</span>
 
-        {sortedEvents.length > 0 && (
-          <span className="event-count-badge">
-            {currentIndex + 1}/{sortedEvents.length}
-          </span>
-        )}
       </div>
 
-      <div className="day-events-container">
+      <div className={`day-events-container ${sortedEvents.length > 1 ? 'has-multiple-events' : ''}`}>
         {sortedEvents.length > 0 && currentEvent && (
-          <div className="calendar-event-card">
+          <div className="calendar-event-card calendar-event-card--month">
             <span className="event-time">
               {formatTime(currentEvent.start?.dateTime, currentEvent.start?.date)}
             </span>
             <span className="event-title">
-              {currentEvent.summary}
+              {currentEvent.summary || 'Untitled event'}
             </span>
-          </div>
-        )}
-
-        {sortedEvents.length > 1 && (
-          <div className="event-nav-arrows">
-            <button type="button" onClick={handlePrev} aria-label="Précédent">
-              ‹
-            </button>
-            <button type="button" onClick={handleNext} aria-label="Suivant">
-              ›
-            </button>
+            {sortedEvents.length > 1 && (
+              <div className="event-nav-arrows" aria-label="Navigate between events">
+                <button type="button" onClick={handlePrev} aria-label="Previous event">
+                  ‹
+                </button>
+                <span>{currentIndex + 1} / {sortedEvents.length}</span>
+                <button type="button" onClick={handleNext} aria-label="Next event">
+                  ›
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

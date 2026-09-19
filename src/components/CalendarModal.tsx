@@ -26,7 +26,7 @@ export function CalendarModal({ event, onClose }: CalendarModalProps) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
 
-  const title = event.summary || '(Sans titre)';
+  const title = event.summary || '(Untitled event)';
   const startValue = event.start.dateTime || event.start.date;
   const endValue = event.end.dateTime || event.end.date;
   const startDate = startValue ? new Date(startValue) : null;
@@ -35,7 +35,7 @@ export function CalendarModal({ event, onClose }: CalendarModalProps) {
 
   const formatTime = (date: Date | null) => {
     if (!date) return '';
-    return date.toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit' });
   };
 
   if (!mounted) return null;
@@ -43,7 +43,7 @@ export function CalendarModal({ event, onClose }: CalendarModalProps) {
   return createPortal(
     <div className="calendar-modal-overlay" onClick={onClose}>
       <div className="calendar-modal-panel" onClick={(e) => e.stopPropagation()}>
-        <button type="button" className="calendar-modal-close" onClick={onClose} aria-label="Fermer">
+        <button type="button" className="calendar-modal-close" onClick={onClose} aria-label="Close">
           ×
         </button>
 
@@ -51,7 +51,7 @@ export function CalendarModal({ event, onClose }: CalendarModalProps) {
 
         <div className="calendar-event-time">
           {isAllDay ? (
-            <span>Toute la journée</span>
+            <span>All day</span>
           ) : (
             <span>
               {formatTime(startDate)}

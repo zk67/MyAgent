@@ -17,7 +17,7 @@ export function Chat({ onEventCreated }: ChatProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: 'Bonjour ! Que souhaitez-vous faire avec votre calendrier ?',
+      content: 'Hello! What would you like to do with your calendar?',
     },
   ]);
   const [loading, setLoading] = useState(false);
@@ -46,7 +46,7 @@ export function Chat({ onEventCreated }: ChatProps) {
       const data = await response.json();
       setMessages((current) => [
         ...current,
-        { role: 'assistant', content: data.message ?? 'Réponse reçue.' },
+        { role: 'assistant', content: data.message ?? 'Response received.' },
       ]);
 
       if (data.action === 'create_event') {
@@ -55,7 +55,7 @@ export function Chat({ onEventCreated }: ChatProps) {
     } catch {
       setMessages((current) => [
         ...current,
-        { role: 'assistant', content: "Une erreur est survenue, réessayez dans un instant." },
+        { role: 'assistant', content: 'Something went wrong. Please try again in a moment.' },
       ]);
     } finally {
       setLoading(false);
@@ -81,11 +81,11 @@ export function Chat({ onEventCreated }: ChatProps) {
     <div className="messages" ref={scrollRef}>
       {messages.map((message, index) => (
         <div key={`${message.role}-${index}`} className={`message ${message.role}`}>
-          <span>{message.role === 'user' ? 'Vous' : 'lilIA'}</span>
+          <span>{message.role === 'user' ? 'You' : 'lilIA'}</span>
           <p>{message.content}</p>
         </div>
       ))}
-      {loading && <div className="typing">lilIA réfléchit…</div>}
+      {loading && <div className="typing">lilIA is thinking...</div>}
     </div>
 
     <div className="quick-actions">
@@ -101,7 +101,7 @@ export function Chat({ onEventCreated }: ChatProps) {
         placeholder="Ask something..."
         aria-label="Message"
       />
-      <button type="submit" disabled={loading || !input.trim()} aria-label="Envoyer">
+      <button type="submit" disabled={loading || !input.trim()} aria-label="Send">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M22 2 11 13" strokeLinecap="round" strokeLinejoin="round" />
           <path d="M22 2 15 22l-4-9-9-4 20-7Z" strokeLinecap="round" strokeLinejoin="round" />

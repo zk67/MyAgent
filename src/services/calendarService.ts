@@ -33,8 +33,34 @@ export function getCalendarClient(sessionId: string) {
     refresh_token: tokens.refreshToken,
     expiry_date: tokens.expiresAt,
   });
+
+  authClient.on('tokens', (refreshedTokens) => {
+    saveTokens(sessionId, {
+      accessToken: refreshedTokens.access_token || tokens.accessToken,
+      refreshToken: refreshedTokens.refresh_token || tokens.refreshToken,
+      expiresAt: refreshedTokens.expiry_date || tokens.expiresAt,
+    });
+  });
+
   const calendar = google.calendar({ version: 'v3', auth: authClient });
   return calendar;
+}
+
+export async function getGoogleUserProfile(sessionId: string) {
+  const tokens = getTokens(sessionId);
+  if (!tokens) {
+    throw new Error('No tokens found for the given session ID.');
+  }
+
+  const authClient = createOAuth2client();
+  authClient.setCredentials({
+    access_token: tokens.accessToken,
+    refresh_token: tokens.refreshToken,
+    expiry_date: tokens.expiresAt,
+  });
+  const oauth2 = google.oauth2({ version: 'v2', auth: authClient });
+  const response = await oauth2.userinfo.get();
+  return response.data;
 }
 
 function addOneHour(time: string): string {
