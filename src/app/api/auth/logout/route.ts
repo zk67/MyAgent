@@ -1,14 +1,17 @@
 import { deleteTokens } from '@/services/calendarService';
-import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { NextResponse } from 'next/server';
 
 export async function POST() {
-    const cookieStore = await cookies();
-    const session_id = cookieStore.get('session_id')?.value;
+    const sessionId = (await cookies()).get('session_id')?.value;
 
-    if (session_id) {
-        deleteTokens(session_id);
-        return NextResponse.json({ success: true });
+    if (!sessionId) {
+        return NextResponse.json(
+            { success: false, message: 'Missing session_id' },
+            { status: 400 }
+        );
     }
-    return NextResponse.json({ success: false, message: 'Missing session_id' }, { status: 400 });
+
+    deleteTokens(sessionId);
+    return NextResponse.json({ success: true });
 }

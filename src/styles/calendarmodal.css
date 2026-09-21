@@ -1,12 +1,13 @@
 .calendar-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(29, 29, 31, 0.4);
-  backdrop-filter: blur(4px);
+  background: rgba(29, 29, 31, 0.52);
+  backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  padding: 24px;
 }
 
 .calendar-modal-panel {
@@ -16,12 +17,33 @@
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-soft);
   padding: 32px;
-  max-width: 480px;
-  width: 90%;
+  max-width: 560px;
+  width: min(100%, 560px);
   max-height: 80vh;
   overflow-y: auto;
   font-family: var(--font-sans);
   color: var(--text-primary);
+}
+
+.calendar-modal-heading {
+  padding-right: 36px;
+  margin-bottom: 24px;
+}
+
+.calendar-modal-kicker,
+.calendar-modal-label,
+.calendar-modal-section-title {
+  display: block;
+  color: var(--text-tertiary);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.calendar-modal-kicker {
+  color: var(--accent);
+  margin-bottom: 8px;
 }
 
 .calendar-modal-close {
@@ -49,20 +71,163 @@
 
 .calendar-modal-panel .calendar-event-title {
   font-family: var(--font-display);
-  font-size: 22px;
+  font-size: clamp(1.6rem, 4vw, 2.15rem);
+  line-height: 1.1;
   font-weight: 560;
-  margin: 0 0 8px;
-  padding-right: 32px;
+  margin: 0;
 }
 
-.calendar-modal-panel .calendar-event-time {
+.calendar-modal-details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 26px;
+}
+
+.calendar-modal-detail {
+  display: flex;
+  gap: 10px;
+  min-width: 0;
+  padding: 13px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm, 10px);
+  background: var(--bg);
+}
+
+.calendar-modal-detail:first-child {
+  grid-column: 1 / -1;
+}
+
+.calendar-modal-detail-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 1rem;
+}
+
+.calendar-modal-detail > div {
+  min-width: 0;
+}
+
+.calendar-modal-detail strong,
+.calendar-modal-detail-value {
+  display: block;
+  margin-top: 3px;
+  overflow-wrap: anywhere;
+}
+
+.calendar-modal-detail strong {
+  font-size: 0.88rem;
+}
+
+.calendar-modal-detail-value {
   color: var(--text-secondary);
-  font-size: 14px;
-  margin-bottom: 16px;
+  font-size: 0.82rem;
+}
+
+.calendar-modal-section {
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.calendar-modal-section + .calendar-modal-section {
+  margin-top: 20px;
 }
 
 .calendar-modal-panel .calendar-event-description {
+  margin: 9px 0 0;
   color: var(--text-primary);
-  font-size: 14px;
+  font-size: 0.9rem;
   line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.calendar-modal-reminders {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.calendar-modal-reminders span {
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.calendar-modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  margin-top: 28px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+
+.calendar-modal-delete-error {
+  flex: 1;
+  margin: 0;
+  color: #b33a32;
+  font-size: 0.78rem;
+  line-height: 1.3;
+}
+
+.calendar-modal-delete {
+  flex-shrink: 0;
+  border: 1px solid #e6b9b4;
+  border-radius: 10px;
+  padding: 9px 14px;
+  background: #fff7f6;
+  color: #b33a32;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.calendar-modal-delete:hover:not(:disabled) {
+  border-color: #b33a32;
+  background: #fdf0ee;
+}
+
+.calendar-modal-delete:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+@media (max-width: 520px) {
+  .calendar-modal-overlay {
+    padding: 12px;
+  }
+
+  .calendar-modal-panel {
+    padding: 24px 20px;
+  }
+
+  .calendar-modal-details {
+    grid-template-columns: 1fr;
+  }
+
+  .calendar-modal-detail:first-child {
+    grid-column: auto;
+  }
+
+  .calendar-modal-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .calendar-modal-delete {
+    width: 100%;
+  }
 }

@@ -1,17 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import "@/styles/calendarday.css";
-import { CalendarEvent } from "@/types/types";
-import { CalendarModal } from "./CalendarModal";
+import '@/styles/calendarday.css';
+import { CalendarEvent } from '@/types/types';
+import { CalendarModal } from './CalendarModal';
 
 type CalendarDayProps = {
   day: number | null;
   events: CalendarEvent[];
   isToday: boolean;
+  onDeleted?: (event: CalendarEvent) => void;
 };
 
-export function CalendarDay({ day, events, isToday }: CalendarDayProps) {
+export function CalendarDay({ day, events, isToday, onDeleted }: CalendarDayProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -88,6 +89,7 @@ export function CalendarDay({ day, events, isToday }: CalendarDayProps) {
         <CalendarModal
           event={currentEvent}
           onClose={() => setIsModalOpen(false)}
+          onDeleted={() => onDeleted?.(currentEvent)}
         />
       )}
     </div>

@@ -3,7 +3,7 @@ import { createOAuth2client } from '@/lib/google/auth';
 import { cookies } from 'next/headers';
 
 export async function GET() {
-  const oauth2client = createOAuth2client();
+  const oauthClient = createOAuth2client();
   const state = crypto.randomUUID();
   const sessionId = crypto.randomUUID();
 
@@ -23,11 +23,12 @@ export async function GET() {
     path: '/',
   });
 
-  const authUrl = oauth2client.generateAuthUrl({
+  const authUrl = oauthClient.generateAuthUrl({
     access_type: 'offline',
+    prompt: 'consent',
     scope: ['https://www.googleapis.com/auth/calendar.events'],
-    state: state,
+    state,
   });
 
-  return NextResponse.redirect(authUrl); 
+  return NextResponse.redirect(authUrl);
 }

@@ -17,17 +17,6 @@
   font-weight: 560;
 }
 
-.event-form-icon {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  background: var(--accent-soft);
-  color: var(--accent);
-  display: grid;
-  place-items: center;
-  font-size: 1.4rem;
-}
-
 .event-form {
   display: flex;
   flex-direction: column;
@@ -94,19 +83,6 @@
 .event-form-submit:disabled {
   cursor: wait;
   opacity: 0.65;
-}
-
-.event-form-status {
-  margin: 0;
-  font-size: 0.82rem;
-}
-
-.event-form-status.success {
-  color: #27734b;
-}
-
-.event-form-status.error {
-  color: #b33a32;
 }
 
 @media (max-width: 520px) {

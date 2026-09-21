@@ -1,5 +1,5 @@
 'use client';
-import {  useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Chat } from '@/components/Chat';
 import { Calendar } from '@/components/Calendar';
 import { ConnectWidget } from '@/components/ConnectWidget';
@@ -14,6 +14,20 @@ export default function HomePage() {
   const [connectedState, setConnectedState] = useState(false);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'create'>('dashboard');
   const [overviewEvents, setOverviewEvents] = useState<CalendarEvent[]>([]);
+  const [createdEvent, setCreatedEvent] = useState<CalendarEvent | undefined>();
+
+  const refreshCalendarData = (change?: { type: 'created' | 'deleted'; event: CalendarEvent }) => {
+    if (change?.type === 'created') {
+      setCreatedEvent(change.event);
+      setOverviewEvents((currentEvents) => [...currentEvents, change.event]);
+    }
+    if (change?.type === 'deleted') {
+      const deletedId = change.event.id || change.event.eventId;
+      setCreatedEvent(undefined);
+      setOverviewEvents((currentEvents) => currentEvents.filter((event) => (event.id || event.eventId) !== deletedId));
+    }
+    setRefreshKey((prev) => prev + 1);
+  };
 
   const onDisconnect = async () => {
     const data = await fetch( '/api/auth/logout', {
@@ -27,29 +41,23 @@ export default function HomePage() {
     }
   }
 
-   const checkStatus = () => {
-      fetch('/api/status')
-      .then((res) => res.json())
+  const checkStatus = () => {
+    fetch('/api/status')
+      .then((response) => response.json())
       .then((data) => {
-        if (data.connected) {
-          setConnectedState(true);
-          setRefreshKey((prev) => prev + 1);
-        }else{
-          setConnectedState(false);
-        }
+        setConnectedState(data.connected);
+        if (data.connected) setRefreshKey((previous) => previous + 1);
       });
-    };
-    
+  };
+
   useEffect(() => {
     checkStatus();
 
-    //fermeture du pop up on écoute l'évenement de message pour détecter la réussite de l'authentification
-    //et on tchek le status de la connexion
     const handleAuthMessage = (event: MessageEvent) => {
       if (event.data?.type === 'GOOGLE_AUTH_SUCCESS') {
         checkStatus();
         setRefreshKey((prev) => prev + 1);
-      }
+      };
     };
     window.addEventListener('message', handleAuthMessage);
     return () => window.removeEventListener('message', handleAuthMessage);
@@ -79,8 +87,10 @@ export default function HomePage() {
   todayStart.setHours(0, 0, 0, 0);
   const tomorrowStart = new Date(todayStart);
   tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+
   const weekEnd = new Date(todayStart);
   weekEnd.setDate(weekEnd.getDate() + (8 - (weekEnd.getDay() || 7)));
+
   const twoWeeksEnd = new Date(todayStart);
   twoWeeksEnd.setDate(twoWeeksEnd.getDate() + 14);
 
@@ -90,9 +100,11 @@ export default function HomePage() {
     const date = new Date(event.start.dateTime || `${value}T00:00:00`);
     return Number.isNaN(date.getTime()) ? null : date;
   };
+
   const eventsWithDates = overviewEvents
     .map((event) => ({ event, date: getEventDate(event) }))
     .filter((item): item is { event: CalendarEvent; date: Date } => item.date !== null);
+
   const todaysEvents = eventsWithDates
     .filter(({ date }) => date >= todayStart && date < tomorrowStart)
     .map(({ event, date }) => ({
@@ -100,6 +112,7 @@ export default function HomePage() {
       time: event.start.dateTime ? date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'All day',
       title: event.summary || 'Untitled event',
     }));
+
   const eventsToday = todaysEvents.length;
   const eventsThisWeek = eventsWithDates.filter(({ date }) => date >= todayStart && date < weekEnd).length;
   const eventsNextTwoWeeks = eventsWithDates.filter(({ date }) => date >= todayStart && date < twoWeeksEnd).length;
@@ -119,7 +132,9 @@ export default function HomePage() {
           <section className="workspace">
             <Calendar
               refreshKey={refreshKey}
+              createdEvent={createdEvent}
               onUnauthorized={() => setConnectedState(false)}
+              onEventsChanged={refreshCalendarData}
             />
 
             <div className={`side-column ${activeTab === 'create' ? 'create-mode' : ''}`}>
@@ -131,7 +146,7 @@ export default function HomePage() {
                     eventsNextTwoWeeks={eventsNextTwoWeeks}
                     todaysEvents={todaysEvents}
                   />
-                  <EventForm onEventCreated={() => setRefreshKey((prev) => prev + 1)} />
+                  <EventForm onEventCreated={(event) => refreshCalendarData({ type: 'created', event })} />
                 </>
               ) : (
                 <>
@@ -141,7 +156,7 @@ export default function HomePage() {
                     eventsNextTwoWeeks={eventsNextTwoWeeks}
                     todaysEvents={todaysEvents}
                   />
-                  <Chat onEventCreated={() => setRefreshKey((prev) => prev + 1)} />
+                  <Chat onEventCreated={() => refreshCalendarData()} />
                 </>
               )}
             </div>

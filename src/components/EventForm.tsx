@@ -2,9 +2,10 @@
 
 import { FormEvent, useState } from 'react';
 import '@/styles/eventform.css';
+import { CalendarEvent } from '@/types/types';
 
 type EventFormProps = {
-  onEventCreated: () => void;
+  onEventCreated: (event: CalendarEvent) => void;
 };
 
 export function EventForm({ onEventCreated }: EventFormProps) {
@@ -14,8 +15,10 @@ export function EventForm({ onEventCreated }: EventFormProps) {
   const [endTime, setEndTime] = useState('10:00');
   const [description, setDescription] = useState('');
   const [reminder, setReminder] = useState('');
-  const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -23,6 +26,12 @@ export function EventForm({ onEventCreated }: EventFormProps) {
 
     if (endTime && endTime <= startTime) {
       setStatus({ type: 'error', message: 'The end time must be after the start time.' });
+      return;
+    }
+
+    const startDateTime = new Date(`${startDate}T${startTime}`);
+    if (startDateTime.getTime() < Date.now()) {
+      setStatus({ type: 'error', message: 'You cannot create an event in the past.' });
       return;
     }
 
@@ -40,26 +49,26 @@ export function EventForm({ onEventCreated }: EventFormProps) {
         throw new Error(data.error || 'Unable to create the event.');
       }
 
-      setStatus({ type: 'success', message: 'Event created in your calendar.' });
       setTitle('');
       setDescription('');
       setReminder('');
-      onEventCreated();
+      setStatus({ type: 'success', message: 'Event created in your calendar.' });
+      onEventCreated(data.event as CalendarEvent);
     } catch (error) {
-      setStatus({ type: 'error', message: error instanceof Error ? error.message : 'Something went wrong.' });
+      setStatus({ type: 'error', message: error instanceof Error ? error.message : 'Unable to create the event.' });
+      console.error('Unable to create the event.', error);
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <section className="panel event-form-panel">
+    <section className={`panel event-form-panel ${status ? `has-${status.type}` : ''}`}>
       <div className="panel-header">
         <div>
           <div className="event-form-eyebrow">Calendar</div>
           <h2 className="event-form-title">Create an event</h2>
         </div>
-        <div className="event-form-icon" aria-hidden="true">+</div>
       </div>
 
       <form className="event-form" onSubmit={handleSubmit}>
@@ -71,7 +80,7 @@ export function EventForm({ onEventCreated }: EventFormProps) {
         <div className="event-form-row">
           <label>
             Date
-            <input type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} required />
+            <input type="date" min={today} value={startDate} onChange={(event) => setStartDate(event.target.value)} required />
           </label>
           <label>
             Start
@@ -98,8 +107,6 @@ export function EventForm({ onEventCreated }: EventFormProps) {
             <option value="1440">1 day before</option>
           </select>
         </label>
-
-        {status && <p className={`event-form-status ${status.type}`} role="status">{status.message}</p>}
 
         <button className="event-form-submit" type="submit" disabled={loading}>
           {loading ? 'Creating...' : 'Create event'}

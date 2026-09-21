@@ -81,11 +81,6 @@
   text-overflow: ellipsis;
 }
 
-/* actions "View today"/"View tomorrow" en tooltip-like, cachées par défaut, visibles au survol pour ne pas prendre de place */
-.stat-action {
-  display: none;
-}
-
 /* --- Today's Events compact --- */
 .today-events-header {
   display: flex;
@@ -122,14 +117,6 @@
   background: var(--bg);
 }
 
-.event-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--accent);
-  flex-shrink: 0;
-}
-
 .event-time {
   color: var(--text-secondary);
   width: 62px;
@@ -141,18 +128,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.view-all-button {
-  margin-top: 8px;
-  width: 100%;
-  font-size: 0.75rem;
-  padding: 7px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text-primary);
-  cursor: pointer;
 }
 
 .no-events-message {

@@ -110,7 +110,6 @@
 .calendar-event-card--month {
   position: relative;
   height: 100%;
-  box-sizing: border-box;
   gap: 3px;
   padding: 7px 8px 8px 10px;
   border: 1px solid var(--border);

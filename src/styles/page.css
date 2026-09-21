@@ -45,11 +45,18 @@
   overflow: hidden;
 }
 
-.side-column:not(.create-mode) .chat-panel {
-  flex: 0 0 500px;
+.side-column > :first-child {
+  flex: 0 0 auto;
+  min-height: 250px;
 }
 
-/* Panel de base, réutilisé par Overview/Calendar/Chat via className="panel" */
+/* Chat et formulaire se partagent tout l'espace restant sous Overview */
+.side-column > .chat-panel,
+.side-column > .event-form-panel {
+  flex: 1 1 0;
+  min-height: 0;
+}
+
 .panel {
   min-height: 0;
   background: var(--surface);

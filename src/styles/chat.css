@@ -73,6 +73,14 @@
   line-height: 1.4;
 }
 
+.message-file {
+  display: block;
+  align-self: flex-start;
+  margin-top: 6px;
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+}
+
 .message.assistant p {
   background: var(--bg);
   border-top-left-radius: 4px;
@@ -113,9 +121,7 @@
 }
 
 .chat-panel {
-  flex: 1 1 auto; 
-  min-height: 0;
-  padding: 0;
+  flex: 0 0 auto;
 }
 
 .chat-form {
@@ -135,6 +141,28 @@
   font-size: 0.88rem;
   background: var(--bg);
   font-family: var(--font-sans);
+}
+
+.chat-file-input {
+  display: none;
+}
+
+.chat-file-button {
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 9px 10px;
+  background: var(--surface);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.chat-file-button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .chat-form input:focus {
@@ -167,4 +195,41 @@
   font-size: 0.72rem;
   color: var(--text-tertiary);
   padding-bottom: 12px;
+}
+
+.chat-file-status {
+  flex-shrink: 0;
+  padding: 0 20px 10px;
+}
+
+.chat-file-preview {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  padding: 7px 9px;
+  background: var(--bg);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.76rem;
+  cursor: pointer;
+}
+
+.chat-file-preview span:nth-child(2) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-file-preview strong {
+  margin-left: auto;
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+.chat-file-error {
+  color: #b33a32;
+  font-size: 0.76rem;
 }

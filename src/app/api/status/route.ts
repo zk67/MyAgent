@@ -10,13 +10,14 @@ export async function GET() {
             { status: 401 }
         );
     }
+
     const tokens = getTokens(sessionId);
-    
-    if (!tokens) {
+    if (!tokens || !tokens.refreshToken) {
         return NextResponse.json(
             { connected: false, error: 'No tokens found' },
             { status: 401 }
         );
     }
+
     return NextResponse.json({ connected: true });
 }

@@ -121,6 +121,11 @@
   border-color: var(--accent);
 }
 
+.calendar-week-column.is-today .calendar-event-card--list .event-time,
+.calendar-week-column.is-today .calendar-event-card--list .event-title {
+  color: var(--text-primary);
+}
+
 .calendar-week-day-header {
   display: flex;
   justify-content: space-between;
