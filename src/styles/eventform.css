@@ -68,6 +68,12 @@
   gap: 10px;
 }
 
+.event-form-details-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
 .event-form-submit {
   flex-shrink: 0;
   border: 0;
@@ -87,6 +93,10 @@
 
 @media (max-width: 520px) {
   .event-form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .event-form-details-row {
     grid-template-columns: 1fr;
   }
 }

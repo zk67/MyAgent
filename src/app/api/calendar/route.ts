@@ -1,15 +1,26 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { deleteEvent, getEvents, newEvent } from '@/services/calendarService';
+import { deleteEvent, deleteTokens, getEvents, newEvent } from '@/services/calendarService';
 
 function isSessionError(message: string) {
-  return message.includes('No tokens found') || message.includes('No refresh token');
+  return (
+    message.includes('No tokens found') ||
+    message.includes('No refresh token') ||
+    message.includes('invalid_grant')
+  );
 }
 
 function sessionErrorResponse() {
   return NextResponse.json(
     { error: 'Calendar connection expired. Please reconnect.' },
     { status: 401 }
+  );
+}
+
+function dailyLimitResponse() {
+  return NextResponse.json(
+    { error: 'You can create a maximum of 7 events per day.' },
+    { status: 409 }
   );
 }
 
@@ -41,7 +52,12 @@ export async function GET(request: Request) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     console.error('API error /api/calendar:', message);
 
-    if (isSessionError(message)) return sessionErrorResponse();
+    if (isSessionError(message)) {
+      const sessionId = await getSessionId();
+      
+      if (sessionId) deleteTokens(sessionId);
+      return sessionErrorResponse();
+    }
     return NextResponse.json({ error: 'Unable to load calendar events' }, { status: 500 });
   }
 }
@@ -59,7 +75,13 @@ export async function POST(request: Request) {
     const startTime = typeof body.startTime === 'string' ? body.startTime : '';
     const endTime = typeof body.endTime === 'string' && body.endTime ? body.endTime : undefined;
     const description = typeof body.description === 'string' ? body.description.trim() : undefined;
+    const location = typeof body.location === 'string' ? body.location.trim() : undefined;
     const reminder = body.reminder === '' || body.reminder === undefined ? undefined : Number(body.reminder);
+
+    const hasTooManyCharacters = title.length > 100
+      || (description !== undefined && description.length > 500)
+      || (location !== undefined && location.length > 200);
+
     const validDate = /^\d{4}-\d{2}-\d{2}$/.test(startDate)
       && !Number.isNaN(new Date(`${startDate}T00:00:00`).getTime());
     const validStartTime = /^([01]\d|2[0-3]):[0-5]\d$/.test(startTime);
@@ -71,18 +93,28 @@ export async function POST(request: Request) {
       !validStartTime ||
       !validEndTime ||
       (endTime !== undefined && endTime <= startTime) ||
+      hasTooManyCharacters ||
       (reminder !== undefined && !Number.isFinite(reminder))
     ) {
       return NextResponse.json({ error: 'The event details are invalid' }, { status: 400 });
     }
 
-    const event = await newEvent(sessionId, title, startTime, startDate, description, endTime, reminder);
+    const event = await newEvent(sessionId, title, startTime, startDate, description, endTime, reminder, location);
     return NextResponse.json({ event }, { status: 201 });
+    
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     console.error('API error POST /api/calendar:', message);
 
-    if (isSessionError(message)) return sessionErrorResponse();
+    if (message.includes('Daily event limit reached')) {
+      return dailyLimitResponse();
+    }
+
+    if (isSessionError(message)) {
+      const sessionId = await getSessionId();
+      if (sessionId) deleteTokens(sessionId);
+      return sessionErrorResponse();
+    }
     return NextResponse.json({ error: 'Unable to create the calendar event' }, { status: 500 });
   }
 }
@@ -102,11 +134,16 @@ export async function DELETE(request: Request) {
 
     await deleteEvent(sessionId, [eventId]);
     return NextResponse.json({ success: true });
+    
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     console.error('API error DELETE /api/calendar:', message);
 
-    if (isSessionError(message)) return sessionErrorResponse();
+    if (isSessionError(message)) {
+      const sessionId = await getSessionId();
+      if (sessionId) deleteTokens(sessionId);
+      return sessionErrorResponse();
+    }
     return NextResponse.json({ error: 'Unable to delete the calendar event' }, { status: 500 });
   }
 }

@@ -5,6 +5,7 @@ import '@/styles/calendar.css';
 import { CalendarDay } from './CalendarDay';
 import { CalendarModal } from './CalendarModal';
 import { CalendarEvent } from '@/types/types';
+import { getCalendarEvents } from '@/lib/api/calendarClient';
 
 type CalendarProps = {
   refreshKey: number;
@@ -20,26 +21,34 @@ export function Calendar({ refreshKey, createdEvent, onUnauthorized, onEventsCha
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
 
   useEffect(() => {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth() + 1;
-    const query = `year=${year}&month=${month}`;
+    const periodStart = new Date(currentDate);
+    const periodEnd = new Date(currentDate);
 
-    fetch(`/api/calendar?${query}`, { cache: 'no-store' })
-      .then((response) => {
-        if (response.status === 401) {
-          onUnauthorized?.();
-          return null;
-        }
-        if (!response.ok) {
-          throw new Error(`Calendar request failed: ${response.status}`);
-        }
-        return response.json();
-      })
-      .then((data) => {
-        if (!data) return;
-        setEvents(data.events || []);
-      })
+    if (view === 'month') {
+      periodStart.setDate(1);
+      periodStart.setHours(0, 0, 0, 0);
+
+      periodEnd.setMonth(periodEnd.getMonth() + 1, 1);
+      periodEnd.setHours(0, 0, 0, 0);
+    } else if (view === 'week') {
+      periodStart.setDate(periodStart.getDate() - ((periodStart.getDay() + 6) % 7));
+      periodStart.setHours(0, 0, 0, 0);
+
+      periodEnd.setTime(periodStart.getTime());
+      periodEnd.setDate(periodEnd.getDate() + 7);
+    } else {
+      periodStart.setHours(0, 0, 0, 0);
+
+      periodEnd.setTime(periodStart.getTime());
+      periodEnd.setDate(periodEnd.getDate() + 1);
+    }
+
+    getCalendarEvents(periodStart, periodEnd)
+      .then((calendarEvents) => setEvents(calendarEvents))
       .catch((error) => {
+        if (error instanceof Error && error.message.includes('expired')) {
+          onUnauthorized?.();
+        }
         console.error('Unable to load calendar events', error);
         setEvents([]);
       });
@@ -99,36 +108,8 @@ export function Calendar({ refreshKey, createdEvent, onUnauthorized, onEventsCha
     if (view === 'week') nextDate.setDate(nextDate.getDate() + direction * 7);
     if (view === 'day') nextDate.setDate(nextDate.getDate() + direction);
 
-    if (direction < 0) {
-      const firstOfCurrentMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-      firstOfCurrentMonth.setHours(0, 0, 0, 0);
-
-      if (view === 'month' && nextDate < firstOfCurrentMonth) return;
-      if (view !== 'month' && nextDate < firstOfCurrentMonth) {
-        nextDate.setTime(firstOfCurrentMonth.getTime());
-      }
-    }
     setCurrentDate(nextDate);
   }
-
-  function getPeriodStart(date: Date, period: 'month' | 'week' | 'day' = view): Date {
-    const periodStart = new Date(date);
-
-    if (period === 'month') {
-      periodStart.setDate(1);
-    } else if (period === 'week') {
-      periodStart.setDate(periodStart.getDate() - ((periodStart.getDay() + 6) % 7));
-    }
-
-    periodStart.setHours(0, 0, 0, 0);
-    return periodStart;
-  }
-
-  const firstOfCurrentMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-  firstOfCurrentMonth.setHours(0, 0, 0, 0);
-  const isAtEarliestPeriod = view === 'month'
-    ? getPeriodStart(currentDate, view).getTime() <= firstOfCurrentMonth.getTime()
-    : currentDate.getTime() <= firstOfCurrentMonth.getTime();
 
   function getEventsForDay(day: number): CalendarEvent[] {
     return displayedEvents.filter((event) => {
@@ -250,7 +231,6 @@ export function Calendar({ refreshKey, createdEvent, onUnauthorized, onEventsCha
             <button
               onClick={() => view === 'month' ? previousMonth() : moveDate(-1)}
               aria-label="Previous period"
-              disabled={isAtEarliestPeriod}
             >
               ‹
             </button>

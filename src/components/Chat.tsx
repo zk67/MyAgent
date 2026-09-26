@@ -1,6 +1,7 @@
 'use client';
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from 'react';
 import '@/styles/chat.css';
+import { sendChatMessage } from '@/lib/api/chatClient';
 
 type Message = {
   role: 'user' | 'assistant';
@@ -62,16 +63,7 @@ export function Chat({ onEventCreated }: ChatProps) {
     setLoading(true);
 
     try {
-      const formData = new FormData();
-      formData.append('message', message);
-      if (file) formData.append('file', file);
-
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const data = await response.json();
+      const data = await sendChatMessage(message, file);
       setMessages((current) => [
         ...current,
         { role: 'assistant', content: data.message ?? 'Response received.' },
@@ -81,10 +73,15 @@ export function Chat({ onEventCreated }: ChatProps) {
         onEventCreated?.();
       }
       clearSelectedFile();
-    } catch {
+    } catch (error) {
       setMessages((current) => [
         ...current,
-        { role: 'assistant', content: 'Something went wrong. Please try again in a moment.' },
+        {
+          role: 'assistant',
+          content: error instanceof Error
+            ? error.message
+            : 'Something went wrong. Please try again in a moment.',
+        },
       ]);
     } finally {
       setLoading(false);
@@ -153,6 +150,7 @@ export function Chat({ onEventCreated }: ChatProps) {
       </button>
       <input
         value={input}
+        maxLength={2000}
         onChange={(event) => setInput(event.target.value)}
         placeholder="Ask something..."
         aria-label="Message"

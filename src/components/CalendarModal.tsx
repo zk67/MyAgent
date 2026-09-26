@@ -4,6 +4,7 @@ import { useEffect, useState, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import "@/styles/calendarmodal.css";
 import { CalendarEvent } from "@/types/types";
+import { deleteCalendarEvent } from '@/lib/api/calendarClient';
 
 type CalendarModalProps = {
   event: CalendarEvent;
@@ -74,17 +75,7 @@ export function CalendarModal({ event, onClose, onDeleted }: CalendarModalProps)
     setDeleteError(null);
 
     try {
-      const response = await fetch('/api/calendar', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ eventId }),
-      });
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Unable to delete the event.');
-      }
-
+      await deleteCalendarEvent(eventId);
       onDeleted?.();
       onClose();
     } catch (error) {
@@ -129,12 +120,12 @@ export function CalendarModal({ event, onClose, onDeleted }: CalendarModalProps)
             </div>
           )}
 
-          {startValue && !isAllDay && (
+          {event.location && (
             <div className="calendar-modal-detail">
               <span className="calendar-modal-detail-icon" aria-hidden="true">⌖</span>
               <div>
-                <span className="calendar-modal-label">Time zone</span>
-                <strong>{event.start.timeZone || Intl.DateTimeFormat().resolvedOptions().timeZone}</strong>
+                <span className="calendar-modal-label">Location</span>
+                <strong>{event.location}</strong>
               </div>
             </div>
           )}

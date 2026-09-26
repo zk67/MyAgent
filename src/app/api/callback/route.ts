@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getGoogleTokens } from '@/lib/google/auth';
+import { getGoogleTokens } from '@/services/authService';
 import { cookies } from 'next/headers';
 import { saveTokens } from '@/services/calendarService';
 import { CalendarTokens } from '@/types/types';

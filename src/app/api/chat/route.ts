@@ -1,3 +1,4 @@
+
 export async function POST(request: Request) {
   const formData = await request.formData();
   const message = formData.get('message');
@@ -5,6 +6,13 @@ export async function POST(request: Request) {
 
   if (typeof message !== 'string') {
     return Response.json({ error: 'Invalid message.' }, { status: 400 });
+  }
+
+  if (message.length > 2000) {
+    return Response.json(
+      { error: 'The message cannot exceed 2000 characters.' },
+      { status: 400 }
+    );
   }
 
   if (file !== null && !(file instanceof File)) {

@@ -3,6 +3,7 @@
 import { FormEvent, useState } from 'react';
 import '@/styles/eventform.css';
 import { CalendarEvent } from '@/types/types';
+import { createCalendarEvent } from '@/lib/api/calendarClient';
 
 type EventFormProps = {
   onEventCreated: (event: CalendarEvent) => void;
@@ -14,6 +15,7 @@ export function EventForm({ onEventCreated }: EventFormProps) {
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('10:00');
   const [description, setDescription] = useState('');
+  const [location, setLocation] = useState('');
   const [reminder, setReminder] = useState('');
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -38,22 +40,22 @@ export function EventForm({ onEventCreated }: EventFormProps) {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/calendar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, startDate, startTime, endTime, description, reminder }),
+      const createdEvent = await createCalendarEvent({
+        title,
+        startDate,
+        startTime,
+        endTime,
+        description,
+        location,
+        reminder,
       });
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Unable to create the event.');
-      }
 
       setTitle('');
       setDescription('');
+      setLocation('');
       setReminder('');
       setStatus({ type: 'success', message: 'Event created in your calendar.' });
-      onEventCreated(data.event as CalendarEvent);
+      onEventCreated(createdEvent as CalendarEvent);
     } catch (error) {
       setStatus({ type: 'error', message: error instanceof Error ? error.message : 'Unable to create the event.' });
       console.error('Unable to create the event.', error);
@@ -74,7 +76,7 @@ export function EventForm({ onEventCreated }: EventFormProps) {
       <form className="event-form" onSubmit={handleSubmit}>
         <label>
           Title
-          <input value={title} onChange={(event) => setTitle(event.target.value)} required placeholder="e.g. Team meeting" />
+          <input maxLength={100} value={title} onChange={(event) => setTitle(event.target.value)} required placeholder="e.g. Team meeting" />
         </label>
 
         <div className="event-form-row">
@@ -92,10 +94,17 @@ export function EventForm({ onEventCreated }: EventFormProps) {
           </label>
         </div>
 
-        <label>
-          Description <span>(optional)</span>
-          <textarea value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Add a few details" rows={4} />
-        </label>
+        <div className="event-form-details-row">
+          <label>
+            Description <span>(optional)</span>
+            <textarea maxLength={500} value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Add a few details" rows={4} />
+          </label>
+
+          <label>
+            Location <span>(optional)</span>
+            <textarea maxLength={200} value={location} onChange={(event) => setLocation(event.target.value)} placeholder="e.g. Office or video call" rows={4} />
+          </label>
+        </div>
 
         <label>
           Reminder <span>(optional)</span>

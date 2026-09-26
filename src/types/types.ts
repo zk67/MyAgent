@@ -4,11 +4,22 @@ export type CalendarTokens = {
   expiresAt?: number;
 };
 
+export type CreateCalendarEventInput = {
+  title: string;
+  startDate: string;
+  startTime: string;
+  endTime?: string;
+  description?: string;
+  location?: string;
+  reminder?: string;
+};
+
 export type CalendarEvent = {
   eventId?: string;
   id?: string;
   summary?: string;
   description?: string;
+  location?: string;
 
   start: {
     dateTime?: string;

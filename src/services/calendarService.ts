@@ -1,8 +1,9 @@
-import { createOAuth2client } from '@/lib/google/auth';
+import { createOAuth2client } from '@/services/authService';
 import { CalendarEvent, CalendarTokens } from '@/types/types';
 import { google } from 'googleapis';
 
 const sessions = new Map<string, CalendarTokens>();
+const MAX_EVENTS_PER_DAY = 7;
 
 export function saveTokens(sessionId: string, tokens: CalendarTokens) {
   sessions.set(sessionId, tokens);
@@ -70,6 +71,22 @@ function addOneHour(time: string) {
   return `${nextHour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
 }
 
+function getTorontoDate(event: CalendarEvent): string | null {
+  if (event.start.date) return event.start.date;
+
+  if (!event.start.dateTime) return null;
+
+  const date = new Date(event.start.dateTime);
+  if (Number.isNaN(date.getTime())) return null;
+
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Toronto',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date);
+}
+
 export async function newEvent(
   sessionId: string,
   title: string,
@@ -77,9 +94,20 @@ export async function newEvent(
   startDate: string,
   description?: string,
   endTime?: string,
-  reminder?: number
+  reminder?: number,
+  location?: string
 ) {
-  
+  const dayStart = new Date(`${startDate}T00:00:00-12:00`).toISOString();
+  const dayEnd = new Date(`${startDate}T23:59:59+14:00`).toISOString();
+  const existingEvents = await getEvents(sessionId, dayStart, dayEnd);
+  const eventsOnSelectedDay = (existingEvents.items || []).filter(
+    (event) => getTorontoDate(event as CalendarEvent) === startDate
+  );
+
+  if (eventsOnSelectedDay.length >= MAX_EVENTS_PER_DAY) {
+    throw new Error(`Daily event limit reached: maximum ${MAX_EVENTS_PER_DAY} events.`);
+  }
+
   const calendar = getCalendarClient(sessionId);
   const eventEndTime = endTime || addOneHour(startTime);
 
@@ -88,6 +116,7 @@ export async function newEvent(
     requestBody: {
       summary: title,
       description: description || '',
+      location: location || undefined,
       start: {
         dateTime: `${startDate}T${startTime}:00`,
         timeZone: 'America/Toronto',
