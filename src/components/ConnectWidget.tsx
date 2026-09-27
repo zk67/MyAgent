@@ -17,7 +17,7 @@ export function ConnectWidget() {
         <h2>Connect your calendar</h2>
 
         <p>
-          Connect your Google Calendar so lilIA can view and manage your schedule.
+          Connect your Google Calendar so MyAgent can view and manage your schedule.
         </p>
 
         <button

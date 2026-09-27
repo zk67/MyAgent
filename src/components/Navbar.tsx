@@ -1,3 +1,6 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import '@/styles/navbar.css';
 
 type NavbarProps = {
@@ -9,12 +12,33 @@ type NavbarProps = {
 };
 
 export function Navbar({ activeTab, onTabChange, onDisconnect, isConnected }: NavbarProps) {
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  useEffect(() => {
+    const savedTheme = window.localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const dark = savedTheme ? savedTheme === 'dark' : prefersDark;
+    // The theme is read from browser-only storage after hydration.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsDarkMode(dark);
+    document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  }, []);
+
+  function toggleTheme() {
+    setIsDarkMode((current) => {
+      const next = !current;
+      document.documentElement.dataset.theme = next ? 'dark' : 'light';
+      window.localStorage.setItem('theme', next ? 'dark' : 'light');
+      return next;
+    });
+  }
+
   return (
     <>
       <header className="top-header">
         <div className="brand">
           <div className="brand-text">
-            <strong>My Secretary Agent</strong>
+            <strong>MyAgent</strong>
           </div>
         </div>
 
@@ -30,6 +54,15 @@ export function Navbar({ activeTab, onTabChange, onDisconnect, isConnected }: Na
 
         </div>
         )}
+        <button
+          className="theme-toggle"
+          type="button"
+          onClick={toggleTheme}
+          aria-label={isDarkMode ? 'Activer le mode clair' : 'Activer le mode sombre'}
+          title={isDarkMode ? 'Mode clair' : 'Mode sombre'}
+        >
+          {isDarkMode ? '☀' : '☾'}
+        </button>
       </header>
 
       {isConnected && <div className="toolbar">

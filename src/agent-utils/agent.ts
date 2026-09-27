@@ -17,7 +17,7 @@ export async function runAgent(messages: ChatMessage[],sessionId: string,file?: 
     let calendarModified = false;
     let response = await askAgent(contents, file);
 
-    for (let iteration = 0; iteration < 5; iteration++) {
+    for (let iteration = 0; iteration <= 10; iteration++) {
 
         const functionCalls = response.functionCalls;
 
@@ -42,16 +42,13 @@ export async function runAgent(messages: ChatMessage[],sessionId: string,file?: 
         }
 
         // Tool demandé
-        const functionCall = functionCalls[0];
-
-        const toolResult = await executeTool(functionCall, sessionId);
-        calendarModified = true;
+        const functionResponseParts = [];
+        for (const functionCall of functionCalls) {
+            const toolResult = await executeTool(functionCall, sessionId);
+            calendarModified = true;
 
         // Résultat du tool donné à Gemini
-        contents.push({
-            role: 'user',
-            parts: [
-                {
+            functionResponseParts.push({
                     functionResponse: {
                         id: functionCall.id,
                         name: functionCall.name,
@@ -59,9 +56,10 @@ export async function runAgent(messages: ChatMessage[],sessionId: string,file?: 
                             output: toolResult
                         }
                     }
-                }
-            ]
-        });
+            });
+        }
+
+        contents.push({ role: 'user', parts: functionResponseParts });
 
         // Nouvel appel Gemini
         response = await askAgent(contents);

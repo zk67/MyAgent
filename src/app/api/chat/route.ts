@@ -1,6 +1,9 @@
 
 import { runAgent } from '@/agent-utils/agent';
+
+const MAX_PDF_SIZE = 10 * 1024 * 1024;
 import { cookies } from 'next/headers';
+import { ChatMessage } from '@/types/types';
 
 export async function POST(request: Request) {
   const formData = await request.formData();
@@ -11,7 +14,7 @@ export async function POST(request: Request) {
     return Response.json({ error: 'Invalid conversation.' }, { status: 400 });
   }
 
-  let messages: unknown;
+  let messages: ChatMessage[];
   
   try {
     messages = JSON.parse(messagesValue);
@@ -44,16 +47,17 @@ export async function POST(request: Request) {
     return Response.json({ error: 'Only PDF files are accepted.' }, { status: 415 });
   }
 
+  if (file instanceof File && file.size > MAX_PDF_SIZE) {
+    return Response.json({ error: 'PDF files must be 10 MB or smaller.' }, { status: 413 });
+  }
+
   const sessionId = (await cookies()).get('session_id')?.value;
   if (!sessionId) {
     return Response.json({ error: 'Please connect Google Calendar first.' }, { status: 401 });
   }
 
   try {
-    const result = await runAgent(
-      messages as any[],
-      sessionId,
-      file instanceof File ? file : undefined,
+    const result = await runAgent(messages, sessionId, file instanceof File ? file : undefined,
     );
     return Response.json(result);
   } catch (error) {

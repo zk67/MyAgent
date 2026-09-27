@@ -4,6 +4,8 @@ import '@/styles/chat.css';
 import { sendChatMessage } from '@/lib/api/chatClient';
 import { ChatMessage } from '@/types/types';
 
+const MAX_PDF_SIZE = 10 * 1024 * 1024;
+
 type ChatProps = {
   onEventCreated?: () => void;
 };
@@ -37,6 +39,13 @@ export function Chat({ onEventCreated }: ChatProps) {
       return;
     }
 
+    if (file && file.size > MAX_PDF_SIZE) {
+      setSelectedFile(null);
+      setFileError('PDF files must be 10 MB or smaller.');
+      event.target.value = '';
+      return;
+    }
+
     setSelectedFile(file);
   }
 
@@ -52,12 +61,14 @@ export function Chat({ onEventCreated }: ChatProps) {
     const userMessage: ChatMessage = {
       role: 'user',
       content: message || 'PDF attached.',
-      fileName: file?.name,
     };
     const conversation = [...messages, userMessage];
     setMessages(conversation);
     
     setInput('');
+    // Remove the attachment from the composer as soon as it is submitted.
+    // Keep using the captured `file` below so the upload can finish normally.
+    clearSelectedFile();
     setLoading(true);
 
     try {
@@ -66,7 +77,6 @@ export function Chat({ onEventCreated }: ChatProps) {
       if (data.calendarModified) {
         onEventCreated?.();
       }
-      clearSelectedFile();
     } catch (error) {
       setMessages((current) => [
         ...current,
@@ -97,20 +107,29 @@ export function Chat({ onEventCreated }: ChatProps) {
       <div className="assistant-header">
         <div className="assistant-avatar">🤖</div>
         <div>
-          <div className="assistant-name">AI Secretary</div>
+          <div className="assistant-name">MyAgent</div>
           <div className="assistant-status">
             <span className="status-dot" />
             Online
-          </div>
         </div>
       </div>
+      <button
+        type="button"
+        className="chat-attach-button"
+        onClick={() => fileInputRef.current?.click()}
+        aria-label="Attach a PDF"
+        title="Attach a PDF"
+      >
+        + PDF
+      </button>
+    </div>
       <button className="overview-menu-button" aria-label="Options">⋮</button>
     </div>
 
     <div className="messages" ref={scrollRef}>
       {messages.map((message, index) => (
         <div key={`${message.role}-${index}`} className={`message ${message.role}`}>
-          <span>{message.role === 'user' ? 'You' : 'lilIA'}</span>
+          <span>{message.role === 'user' ? 'You' : 'MyAgent'}</span>
           <p>{message.content}</p>
           {message.fileName && <span className="message-file">PDF: {message.fileName}</span>}
         </div>
@@ -119,6 +138,15 @@ export function Chat({ onEventCreated }: ChatProps) {
     </div>
 
     <div className="quick-actions">
+      <button
+        type="button"
+        className="quick-action chat-attach-quick-button"
+        onClick={() => fileInputRef.current?.click()}
+        aria-label="Attach a PDF"
+        title="Attach a PDF"
+      >
+        + PDF
+      </button>
       <button type="button" className="quick-action" onClick={() => handleQuickAction('Schedule a meeting')}>Schedule a meeting</button>
       <button type="button" className="quick-action" onClick={() => handleQuickAction('Check my emails')}>Check my emails</button>
       <button type="button" className="quick-action" onClick={() => handleQuickAction('Summarize my day')}>Summarize my day</button>
@@ -133,15 +161,6 @@ export function Chat({ onEventCreated }: ChatProps) {
         onChange={handleFileChange}
         aria-label="Attach a PDF"
       />
-      <button
-        type="button"
-        className="chat-file-button"
-        onClick={() => fileInputRef.current?.click()}
-        aria-label="Attach a PDF"
-        title="Attach a PDF"
-      >
-        + PDF
-      </button>
       <input
         value={input}
         maxLength={2000}

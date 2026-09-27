@@ -1,4 +1,6 @@
 .app-shell {
+  position: relative;
+  z-index: 1;
   height: 100vh;
   display: flex;
   flex-direction: column;
@@ -9,6 +11,7 @@
 }
 
 .app-body {
+  position: relative;
   max-height: 860px; /* ← AJOUTÉ */
   height: 100%;
   width: 100%;
@@ -75,4 +78,9 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.workspace {
+  position: relative;
+  z-index: 1;
 }

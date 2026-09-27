@@ -56,7 +56,26 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  font-size: 0.85rem;
+  font-size: 0;
+  border: 1px solid var(--accent-soft);
+}
+
+.stat-icon::before {
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.stat-cell:nth-child(1) .stat-icon::before {
+  content: '•';
+}
+
+.stat-cell:nth-child(2) .stat-icon::before {
+  content: '▦';
+}
+
+.stat-cell:nth-child(3) .stat-icon::before {
+  content: '↗';
 }
 
 .stat-text {
@@ -138,4 +157,8 @@
   text-align: center;
   background: var(--bg);
   border-radius: 8px;
+}
+
+.overview-header .overview-menu-button {
+  display: none;
 }

@@ -1,3 +1,16 @@
+.chat-panel .panel-header {
+  position: relative;
+  height: 0;
+  padding: 0;
+  border-bottom: 0;
+  background: transparent;
+  overflow: visible;
+}
+
+.chat-panel .overview-menu-button {
+  display: none;
+}
+
 .assistant-header {
   display: flex;
   align-items: center;
@@ -120,8 +133,81 @@
   cursor: pointer;
 }
 
+.message.assistant:first-child p {
+  border-left: 3px solid var(--accent);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.chat-attach-button {
+  position: absolute;
+  right: 22px;
+  top: 8px;
+  z-index: 2;
+  visibility: visible;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  border-radius: 10px;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.chat-attach-button {
+  display: none;
+}
+
+.chat-attach-quick-button {
+  height: 34px;
+}
+
+.chat-attach-button:hover {
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+
+.quick-action:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 .chat-panel {
+  position: relative;
   flex: 0 0 auto;
+}
+
+.chat-panel .assistant-header {
+  visibility: hidden;
+}
+
+.chat-panel::after {
+  content: 'MyAgent';
+  position: absolute;
+  left: 20px;
+  bottom: 10px;
+  color: var(--text-tertiary);
+  font-size: 0.7rem;
+  font-weight: 600;
+  font-family: var(--font-sans);
+  line-height: 1;
+  pointer-events: none;
+}
+
+.chat-panel::before {
+  content: 'PDF max. 10 MB';
+  position: absolute;
+  right: 20px;
+  bottom: 10px;
+  color: var(--text-tertiary);
+  font-family: var(--font-sans);
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1;
+  pointer-events: none;
 }
 
 .chat-form {
@@ -192,7 +278,9 @@
 .disclaimer {
   flex-shrink: 0;
   text-align: center;
-  font-size: 0.72rem;
+  font-family: var(--font-sans);
+  font-size: 0.7rem;
+  font-weight: 600;
   color: var(--text-tertiary);
   padding-bottom: 12px;
 }
@@ -232,4 +320,8 @@
 .chat-file-error {
   color: #b33a32;
   font-size: 0.76rem;
+}
+
+:root[data-theme='dark'] .status-dot {
+  background: #14532d;
 }
