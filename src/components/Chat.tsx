@@ -2,12 +2,7 @@
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from 'react';
 import '@/styles/chat.css';
 import { sendChatMessage } from '@/lib/api/chatClient';
-
-type Message = {
-  role: 'user' | 'assistant';
-  content: string;
-  fileName?: string;
-};
+import { ChatMessage } from '@/types/types';
 
 type ChatProps = {
   onEventCreated?: () => void;
@@ -15,7 +10,7 @@ type ChatProps = {
 
 export function Chat({ onEventCreated }: ChatProps) {
   const [input, setInput] = useState('');
-  const [messages, setMessages] = useState<Message[]>([
+  const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: 'assistant',
       content: 'Hello! What would you like to do with your calendar?',
@@ -54,22 +49,21 @@ export function Chat({ onEventCreated }: ChatProps) {
   async function sendMessage(message: string, file: File | null = selectedFile) {
     if ((!message && !file) || loading) return;
 
-    setMessages((current) => [...current, {
+    const userMessage: ChatMessage = {
       role: 'user',
       content: message || 'PDF attached.',
       fileName: file?.name,
-    }]);
+    };
+    const conversation = [...messages, userMessage];
+    setMessages(conversation);
+    
     setInput('');
     setLoading(true);
 
     try {
-      const data = await sendChatMessage(message, file);
-      setMessages((current) => [
-        ...current,
-        { role: 'assistant', content: data.message ?? 'Response received.' },
-      ]);
-
-      if (data.action === 'create_event') {
+      const data = await sendChatMessage(conversation, file);
+      setMessages(data.messages);
+      if (data.calendarModified) {
         onEventCreated?.();
       }
       clearSelectedFile();
@@ -121,7 +115,7 @@ export function Chat({ onEventCreated }: ChatProps) {
           {message.fileName && <span className="message-file">PDF: {message.fileName}</span>}
         </div>
       ))}
-      {loading && <div className="typing">lilIA is thinking...</div>}
+      {loading && <div className="typing">Thinking...</div>}
     </div>
 
     <div className="quick-actions">

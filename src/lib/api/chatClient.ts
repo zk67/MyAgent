@@ -1,6 +1,8 @@
-export async function sendChatMessage(message: string, file?: File | null) {
+import { ChatMessage } from '@/types/types';
+
+export async function sendChatMessage(messages: ChatMessage[], file?: File | null) {
   const formData = new FormData();
-  formData.append('message', message);
+  formData.append('messages', JSON.stringify(messages));
 
   if (file) {
     formData.append('file', file);

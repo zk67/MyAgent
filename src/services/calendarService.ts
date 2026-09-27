@@ -152,6 +152,10 @@ export async function getEvents(sessionId: string, timeMin: string, timeMax: str
 }
 
 export async function updateEvent(sessionId: string, event: CalendarEvent, update: Partial<CalendarEvent>) {
+  if (Object.keys(update).length === 0) {
+    throw new Error('At least one event field must be provided for an update.');
+  }
+
   const calendar = getCalendarClient(sessionId);
   const { eventId, ...eventData } = { ...event, ...update };
 

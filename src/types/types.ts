@@ -14,6 +14,12 @@ export type CreateCalendarEventInput = {
   reminder?: string;
 };
 
+export type ChatMessage = {
+  role: 'user' | 'assistant';
+  content: string;
+  fileName?: string;
+};
+
 export type CalendarEvent = {
   eventId?: string;
   id?: string;
