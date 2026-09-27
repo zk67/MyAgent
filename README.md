@@ -1,14 +1,47 @@
 # MyAgent
 
-MyAgent is a Next.js-based assistant dashboard that combines a chat experience, Google Calendar integration, and connection-aware UI in one web app.
+MyAgent is a Next.js web app that combines a connection-aware dashboard, Google Calendar integration, and an AI-powered assistant in one experience. The app starts by checking whether the user is connected, prompts for Google authentication when needed, and then loads a full workspace with calendar data and AI chat features.
 
-## What it does
+## Overview
 
-- Shows a dashboard that switches between a connection screen and the main workspace
-- Checks authentication state through backend API routes
-- Displays a calendar panel, overview metrics, and a chat panel when connected
-- Supports sign-in/out flows for a Google-backed account
-- Refreshes the UI after authentication or event creation
+This project is built to help users:
+
+- connect their Google account
+- view upcoming calendar events
+- review a quick overview of activity and daily events
+- use an AI assistant to interact with calendar-related workflows
+- create events from the interface or chat experience
+
+It is structured as a modern Next.js App Router application using TypeScript and server routes for auth and calendar access.
+
+## Features
+
+### Connection-aware landing experience
+The app checks the current auth/session status on load and renders one of two states:
+
+- a connect screen when the user is not authenticated
+- the main workspace when the user is connected
+
+### Google OAuth authentication
+User sign-in is handled through Google OAuth. The app:
+
+- starts the OAuth flow via `/api/auth/login`
+- processes the callback via `/api/callback`
+- stores session state using secure cookies
+- validates connection status through `/api/status`
+
+### Calendar dashboard
+Once authenticated, the app loads event data from Google Calendar and displays it in a workspace that includes:
+
+- a calendar panel
+- an overview panel with daily and weekly totals
+- a list of events for the current date
+
+### AI assistant chat
+The assistant is connected to a Gemini model and supports interactions related to scheduling and event management. The UI includes a chat panel for direct communication with the assistant.
+
+### Event creation and refresh flow
+Users can create events through the app UI, and the dashboard refreshes afterward so the latest calendar data is immediately visible.
 
 ## Tech stack
 
@@ -16,54 +49,79 @@ MyAgent is a Next.js-based assistant dashboard that combines a chat experience, 
 - React 19
 - TypeScript
 - App Router
-- CSS Modules / global CSS styling
 - Google APIs
+- Google GenAI / Gemini
 - Firebase Admin
+- CSS Modules / global CSS
 
 ## Project structure
 
 ```text
 src/
-├── app/              # Routes, pages, and API handlers
-├── components/       # UI building blocks
-├── styles/           # Global and page styling
-├── lib/              # Shared utilities
-├── services/         # External service integrations
-├── agent/            # Agent-specific logic
-└── types/            # Shared TypeScript types
+├── agent-utils/        # Assistant model/tool configuration
+├── app/                # App Router pages and route handlers
+│   ├── api/            # Auth, calendar, status, and chat API routes
+│   ├── authSuccess/    # Auth success page flow
+│   ├── layout.tsx      # Global app layout
+│   └── page.tsx        # Main dashboard entry
+├── components/         # Reusable UI components
+│   ├── Calendar.tsx
+│   ├── CalendarDay.tsx
+│   ├── CalendarModal.tsx
+│   ├── Chat.tsx
+│   ├── ConnectWidget.tsx
+│   ├── EventForm.tsx
+│   ├── Navbar.tsx
+│   └── Overview.tsx
+├── lib/                # Shared logic and utilities
+├── services/           # External integrations and model access
+│   ├── authService.ts
+│   ├── calendarService.ts
+│   └── model.ts
+├── styles/             # Global styling and page-specific CSS
+├── types/              # Shared TypeScript types
+└── ...
 ```
 
-## Key features
+## API flow
 
-### Connection-aware home screen
-The main page checks whether the user is connected and renders either:
-- a connect widget when disconnected, or
-- the full workspace when authenticated.
+The application relies on backend routes to coordinate user auth and calendar access.
 
-### Workspace layout
-The authenticated view is organized into:
-- a calendar panel,
-- an overview panel with activity metrics, and
-- a chat panel for creating events and interacting with the assistant.
+Key routes include:
 
-### Authentication flow
-The app listens for auth success messages, rechecks connection state, and refreshes the UI after login/logout actions.
-
-### Google Calendar integration
-The repository includes calendar and chat flows designed to work with Google APIs and server-side route handlers.
+- `/api/auth/login` — starts the Google OAuth login flow
+- `/api/callback` — exchanges the OAuth code for tokens
+- `/api/status` — checks whether the user is connected
+- `/api/auth/logout` — signs the user out
+- `/api/calendar` — fetches calendar events
+- `/api/chat` — handles assistant chat requests
 
 ## Getting started
 
 ### Prerequisites
 
-- Node.js 20+ recommended
+- Node.js 20+
 - npm
 
-### Install
+### Install dependencies
 
 ```bash
 npm install
 ```
+
+### Environment variables
+
+Create a `.env.local` file in the project root with the required variables:
+
+```bash
+GEMINI_API_KEY=your_gemini_api_key
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+GOOGLE_REDIRECT_URI=http://localhost:3000/api/callback
+NODE_ENV=development
+```
+
+If you use additional Firebase or deployment-specific services, add those required environment values as needed.
 
 ### Run locally
 
@@ -77,7 +135,7 @@ Then open:
 http://localhost:3000
 ```
 
-### Build for production
+### Production build
 
 ```bash
 npm run build
@@ -90,15 +148,12 @@ npm run start
 npm run lint
 ```
 
-## Environment setup
-
-This project expects server-side integrations to be configured before the full experience works correctly. In particular, Google and Firebase credentials should be provided through environment variables or deployment secrets.
-
 ## Notes
 
-- The app currently relies on backend routes for auth and status checks.
-- If you add new integrations, document the required environment variables here.
-- Consider replacing the placeholder dashboard values with live data as the project evolves.
+- The app depends on backend routes for auth state and calendar access.
+- Google Calendar access is the main external integration behind the dashboard experience.
+- The assistant flow is designed for scheduling and event-related tasks.
+- The project is ready to expand with additional workflows and integrations.
 
 ## License
 
