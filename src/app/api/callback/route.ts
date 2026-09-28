@@ -38,5 +38,5 @@ export async function GET(request: Request) {
     refreshToken: tokens.refresh_token,
     expiresAt: tokens.expiry_date ?? undefined,
   } satisfies CalendarTokens);
-  return NextResponse.redirect(new URL('/authSuccess', request.url));
+  return NextResponse.redirect(new URL('/authSuccess', process.env.APP_URL!));
 }
