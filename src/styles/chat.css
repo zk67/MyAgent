@@ -287,21 +287,32 @@
 
 .chat-file-status {
   flex-shrink: 0;
-  padding: 0 20px 10px;
+  position: absolute;
+  right: 20px;
+  bottom: 10px;
+  z-index: 2;
+  display: flex;
+  justify-content: flex-end;
+  padding: 0;
+}
+
+.chat-panel:has(.chat-file-status)::before {
+  content: none;
 }
 
 .chat-file-preview {
   display: flex;
   align-items: center;
   gap: 8px;
-  max-width: 100%;
-  border: 2px solid transparent;
+  width: fit-content;
+  max-width: min(100%, 240px);
+  border: 0;
   border-radius: 10px;
-  padding: 7px 9px;
-  background: var(--bg);
-  color: var(--text-primary);
+  padding: 0;
+  background: transparent;
+  color: var(--text-tertiary);
   font: inherit;
-  font-size: 0.76rem;
+  font-size: 0.7rem;
   cursor: pointer;
 }
 
