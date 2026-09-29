@@ -1,6 +1,6 @@
 import { Tool, Type } from '@google/genai';
 
-export const MODEL = "gemini-3.5-flash-lite";
+export const MODEL = "gemini-3.1-flash-lite";
 
 export const SYSTEM_PROMPT = `
 Tu es MyAgent, un assistant IA destiné aux étudiants.

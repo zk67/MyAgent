@@ -256,6 +256,15 @@
   border-color: var(--accent);
 }
 
+:root[data-theme='dark'] .chat-form input {
+  color: var(--text-primary);
+  caret-color: var(--text-primary);
+}
+
+:root[data-theme='dark'] .chat-form input::placeholder {
+  color: var(--text-tertiary);
+}
+
 .chat-form button {
   width: 40px;
   height: 40px;

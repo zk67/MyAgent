@@ -5,13 +5,13 @@ export const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
 });
 
-function getTodayInMontreal() {
+export function getTodayInMontreal(date: Date = new Date()) {
     return new Intl.DateTimeFormat('en-CA', {
         timeZone: 'America/Montreal',
         year: 'numeric',
         month: '2-digit',
         day: '2-digit',
-    }).format(new Date());
+    }).format(date);
 }
 
 export async function askAgent(messages: Content[], file?: File) {

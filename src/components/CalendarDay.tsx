@@ -52,7 +52,8 @@ export function CalendarDay({ day, events, isToday, onDeleted }: CalendarDayProp
   if (sortedEvents.length > 0) classes.push('has-events');
   if (isToday) classes.push('is-today');
 
-  const currentEvent = sortedEvents[currentIndex];
+  const safeIndex = Math.min(currentIndex, Math.max(sortedEvents.length - 1, 0));
+  const currentEvent = sortedEvents[safeIndex];
 
   return (
     <div className={classes.join(' ')} onClick={handleDayClick}>
@@ -75,7 +76,7 @@ export function CalendarDay({ day, events, isToday, onDeleted }: CalendarDayProp
                 <button type="button" onClick={handlePrev} aria-label="Previous event">
                   ‹
                 </button>
-                <span>{currentIndex + 1} / {sortedEvents.length}</span>
+                <span>{safeIndex + 1} / {sortedEvents.length}</span>
                 <button type="button" onClick={handleNext} aria-label="Next event">
                   ›
                 </button>

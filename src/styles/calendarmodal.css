@@ -165,6 +165,7 @@
 }
 
 .calendar-modal-actions {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -175,7 +176,13 @@
 }
 
 .calendar-modal-delete-error {
-  flex: 1;
+  position: absolute;
+  right: 0;
+  left: auto;
+  top: 50%;
+  width: max-content;
+  max-width: 220px;
+  transform: translateY(-50%);
   margin: 0;
   color: #b33a32;
   font-size: 0.78rem;
@@ -198,6 +205,18 @@
 .calendar-modal-delete:hover:not(:disabled) {
   border-color: #b33a32;
   background: #fdf0ee;
+}
+
+:root[data-theme='dark'] .calendar-modal-delete {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+
+:root[data-theme='dark'] .calendar-modal-delete:hover:not(:disabled) {
+  border-color: #d66a62;
+  background: #51201d;
+  color: #ffd8d4;
 }
 
 .calendar-modal-delete:disabled {
@@ -229,5 +248,13 @@
 
   .calendar-modal-delete {
     width: 100%;
+  }
+
+  .calendar-modal-delete-error {
+    position: static;
+    width: auto;
+    max-width: none;
+    margin-top: 8px;
+    transform: none;
   }
 }

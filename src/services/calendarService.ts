@@ -1,5 +1,6 @@
 import { createOAuth2client } from '@/services/authService';
 import { CalendarEvent, CalendarTokens } from '@/types/types';
+import { getTodayInMontreal } from '@/services/model';
 import { google } from 'googleapis';
 
 const sessions = new Map<string, CalendarTokens>();
@@ -71,7 +72,7 @@ function addOneHour(time: string) {
   return `${nextHour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
 }
 
-function getTorontoDate(event: CalendarEvent): string | null {
+function getEventDate(event: CalendarEvent): string | null {
   if (event.start.date) return event.start.date;
 
   if (!event.start.dateTime) return null;
@@ -79,12 +80,7 @@ function getTorontoDate(event: CalendarEvent): string | null {
   const date = new Date(event.start.dateTime);
   if (Number.isNaN(date.getTime())) return null;
 
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'America/Toronto',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(date);
+  return getTodayInMontreal(date);
 }
 
 export async function newEvent(
@@ -101,7 +97,7 @@ export async function newEvent(
   const dayEnd = new Date(`${startDate}T23:59:59+14:00`).toISOString();
   const existingEvents = await getEvents(sessionId, dayStart, dayEnd);
   const eventsOnSelectedDay = (existingEvents.items || []).filter(
-    (event) => getTorontoDate(event as CalendarEvent) === startDate
+    (event) => getEventDate(event as CalendarEvent) === startDate
   );
 
   if (eventsOnSelectedDay.length >= MAX_EVENTS_PER_DAY) {
@@ -119,11 +115,11 @@ export async function newEvent(
       location: location || undefined,
       start: {
         dateTime: `${startDate}T${startTime}:00`,
-        timeZone: 'America/Toronto',
+        timeZone: 'America/Montreal',
       },
       end: {
         dateTime: `${startDate}T${eventEndTime}:00`,
-        timeZone: 'America/Toronto',
+        timeZone: 'America/Montreal',
       },
       reminders: reminder
         ? {

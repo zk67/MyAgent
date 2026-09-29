@@ -139,6 +139,12 @@ export async function DELETE(request: Request) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     console.error('API error DELETE /api/calendar:', message);
 
+    // Deleting an already-absent event is safe and should be treated as success.
+    // This prevents a successful deletion from being shown as a UI error.
+    if (message.includes('404') || message.includes('Not Found')) {
+      return NextResponse.json({ success: true });
+    }
+
     if (isSessionError(message)) {
       const sessionId = await getSessionId();
       if (sessionId) deleteTokens(sessionId);

@@ -181,6 +181,10 @@ export function Calendar({ refreshKey, createdEvent, onUnauthorized, onEventsCha
   function handleEventChanged(change: { type: 'created' | 'deleted'; event: CalendarEvent }) {
     const changedId = change.event.id || change.event.eventId;
 
+    if (!changedId) {
+      return;
+    }
+
     setEvents((currentEvents) => {
       if (change.type === 'created') {
         return changedId && currentEvents.some((event) => (event.id || event.eventId) === changedId)
@@ -188,7 +192,10 @@ export function Calendar({ refreshKey, createdEvent, onUnauthorized, onEventsCha
           : [...currentEvents, change.event];
       }
 
-      return currentEvents.filter((event) => (event.id || event.eventId) !== changedId);
+      return currentEvents.filter((event) => {
+        const eventId = event.id || event.eventId;
+        return eventId !== changedId;
+      });
     });
     onEventsChanged?.(change);
   }
