@@ -14,6 +14,7 @@ type CalendarModalProps = {
 
 export function CalendarModal({ event, onClose, onDeleted }: CalendarModalProps) {
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const mounted = useSyncExternalStore(
     () => () => undefined,
@@ -68,6 +69,11 @@ export function CalendarModal({ event, onClose, onDeleted }: CalendarModalProps)
   });
 
   async function handleDelete() {
+    if (!showDeleteConfirmation) {
+      setShowDeleteConfirmation(true);
+      return;
+    }
+
     const eventId = event.id || event.eventId;
     if (!eventId || isDeleting) return;
 
@@ -149,13 +155,25 @@ export function CalendarModal({ event, onClose, onDeleted }: CalendarModalProps)
 
         <div className="calendar-modal-actions">
           {deleteError && <p className="calendar-modal-delete-error" role="alert">{deleteError}</p>}
+          {showDeleteConfirmation && (
+            <p role="alert">Delete “{title}” from your calendar? This cannot be undone.</p>
+          )}
+          {showDeleteConfirmation && (
+            <button
+              type="button"
+              onClick={() => setShowDeleteConfirmation(false)}
+              disabled={isDeleting}
+            >
+              Cancel
+            </button>
+          )}
           <button
             type="button"
             className="calendar-modal-delete"
             onClick={handleDelete}
             disabled={isDeleting || !(event.id || event.eventId)}
           >
-            {isDeleting ? 'Deleting...' : 'Delete event'}
+            {isDeleting ? 'Deleting...' : showDeleteConfirmation ? 'Confirm deletion' : 'Delete event'}
           </button>
         </div>
       </div>
