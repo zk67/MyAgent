@@ -120,3 +120,62 @@ export async function updateSessionTokens(sessionId: string, tokens: CalendarTok
 export async function deleteSession(sessionId: string) {
   await query('DELETE FROM app_sessions WHERE id = $1', [sessionId]);
 }
+
+export async function createPendingDeletion(sessionId: string, events: { id: string; title: string }[]) {
+  const requestId = randomUUID();
+  const eventIds = events.map((event) => event.id);
+  const titles = events.map((event) => event.title);
+
+  await query(
+    `DELETE FROM pending_deletions WHERE session_id = $1`,
+    [sessionId]
+  );
+  await query(
+    `INSERT INTO pending_deletions (id, session_id, event_ids, event_titles, expires_at)
+     VALUES ($1, $2, $3, $4, NOW() + INTERVAL '10 minutes')`,
+    [requestId, sessionId, JSON.stringify(eventIds), JSON.stringify(titles)]
+  );
+
+  return { id: requestId, events };
+}
+
+export async function getPendingDeletion(sessionId: string) {
+  const result = await query<{
+    id: string;
+    event_ids: string[];
+    event_titles: string[];
+  }>(
+    `SELECT id, event_ids, event_titles FROM pending_deletions
+     WHERE session_id = $1 AND expires_at > NOW()`,
+    [sessionId]
+  );
+
+  const pending = result.rows[0];
+  if (!pending) return undefined;
+
+  return {
+    id: pending.id,
+    events: pending.event_ids.map((id, index) => ({
+      id,
+      title: pending.event_titles[index] || 'Untitled event',
+    })),
+  };
+}
+
+export async function consumePendingDeletion(sessionId: string, requestId: string) {
+  const result = await query<{ event_ids: string[] }>(
+    `DELETE FROM pending_deletions
+     WHERE id = $1 AND session_id = $2 AND expires_at > NOW()
+     RETURNING event_ids`,
+    [requestId, sessionId]
+  );
+
+  return result.rows[0]?.event_ids;
+}
+
+export async function cancelPendingDeletion(sessionId: string, requestId: string) {
+  await query(
+    'DELETE FROM pending_deletions WHERE id = $1 AND session_id = $2',
+    [requestId, sessionId]
+  );
+}

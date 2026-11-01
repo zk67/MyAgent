@@ -1,7 +1,7 @@
 'use client';
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from 'react';
 import '@/styles/chat.css';
-import { sendChatMessage } from '@/lib/api/chatClient';
+import { respondToDeletion, sendChatMessage } from '@/lib/api/chatClient';
 import { ChatMessage } from '@/types/types';
 
 const MAX_PDF_SIZE = 10 * 1024 * 1024;
@@ -21,6 +21,7 @@ export function Chat({ onEventCreated }: ChatProps) {
   const [loading, setLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
+  const [pendingDeletion, setPendingDeletion] = useState<{ id: string; events: { id: string; title: string }[] } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -74,6 +75,7 @@ export function Chat({ onEventCreated }: ChatProps) {
     try {
       const data = await sendChatMessage(conversation, file);
       setMessages(data.messages);
+      setPendingDeletion(data.pendingDeletion || null);
       if (data.calendarModified) {
         onEventCreated?.();
       }
@@ -87,6 +89,27 @@ export function Chat({ onEventCreated }: ChatProps) {
             : 'Something went wrong. Please try again in a moment.',
         },
       ]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleDeletionResponse(confirm: boolean) {
+    if (!pendingDeletion || loading) return;
+    setLoading(true);
+    try {
+      await respondToDeletion(pendingDeletion.id, confirm);
+      setPendingDeletion(null);
+      setMessages((current) => [...current, {
+        role: 'assistant',
+        content: confirm ? 'The selected events were deleted.' : 'Deletion cancelled.',
+      }]);
+      if (confirm) onEventCreated?.();
+    } catch (error) {
+      setMessages((current) => [...current, {
+        role: 'assistant',
+        content: error instanceof Error ? error.message : 'Unable to process confirmation.',
+      }]);
     } finally {
       setLoading(false);
     }
@@ -151,6 +174,14 @@ export function Chat({ onEventCreated }: ChatProps) {
       <button type="button" className="quick-action" onClick={() => handleQuickAction('Check my emails')}>Check my emails</button>
       <button type="button" className="quick-action" onClick={() => handleQuickAction('Summarize my day')}>Summarize my day</button>
     </div>
+
+    {pendingDeletion && (
+      <div className="quick-actions" role="group" aria-label="Confirm event deletion">
+        <span>Events to delete: {pendingDeletion.events.map((event) => event.title).join(', ')}</span>
+        <button type="button" className="quick-action" disabled={loading} onClick={() => handleDeletionResponse(true)}>Confirm deletion</button>
+        <button type="button" className="quick-action" disabled={loading} onClick={() => handleDeletionResponse(false)}>Cancel</button>
+      </div>
+    )}
 
     <form className="chat-form" onSubmit={handleSubmit}>
       <input

@@ -21,3 +21,14 @@ export async function sendChatMessage(messages: ChatMessage[], file?: File | nul
 
   return data;
 }
+
+export async function respondToDeletion(requestId: string, confirm: boolean) {
+  const response = await fetch('/api/chat/deletion', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ requestId, confirm }),
+  });
+  const data = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(data?.error || 'Unable to process confirmation.');
+  return data;
+}

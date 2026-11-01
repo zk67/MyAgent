@@ -17,11 +17,15 @@ const client = new pg.Client({
 
 await client.connect();
 try {
-  const migration = await readFile(
-    resolve(process.cwd(), 'migrations/001_persistent_google_sessions.sql'),
-    'utf8'
-  );
-  await client.query(migration);
+  const migrationFiles = [
+    'migrations/001_persistent_google_sessions.sql',
+    'migrations/002_pending_deletions.sql',
+  ];
+
+  for (const file of migrationFiles) {
+    const migration = await readFile(resolve(process.cwd(), file), 'utf8');
+    await client.query(migration);
+  }
   console.log('Database migration completed.');
 } finally {
   await client.end();

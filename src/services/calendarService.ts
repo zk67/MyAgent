@@ -266,3 +266,17 @@ export async function deleteEvent(sessionId: string, eventIds: string[]) {
     });
   }
 }
+
+export async function getEventsById(sessionId: string, eventIds: string[]) {
+  const calendar = await getCalendarClient(sessionId);
+  const events = [];
+
+  for (const eventId of eventIds) {
+    const response = await calendar.events.get({ calendarId: 'primary', eventId });
+    if (response.data.id) {
+      events.push({ id: response.data.id, title: response.data.summary || 'Untitled event' });
+    }
+  }
+
+  return events;
+}
