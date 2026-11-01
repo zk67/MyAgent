@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { getGoogleTokens } from '@/services/authService';
+import { getGoogleProfile, getGoogleTokens } from '@/services/authService';
 import { cookies } from 'next/headers';
-import { saveTokens } from '@/services/calendarService';
+import { saveGoogleConnection } from '@/services/sessionService';
 import { CalendarTokens } from '@/types/types';
 
 export async function GET(request: Request) {
@@ -33,10 +33,13 @@ export async function GET(request: Request) {
     );
   }
 
-  saveTokens(sessionId, {
+  const calendarTokens = {
     accessToken: tokens.access_token,
     refreshToken: tokens.refresh_token,
     expiresAt: tokens.expiry_date ?? undefined,
-  } satisfies CalendarTokens);
+  } satisfies CalendarTokens;
+
+  const profile = await getGoogleProfile(calendarTokens);
+  await saveGoogleConnection(sessionId, profile, calendarTokens);
   return NextResponse.redirect(new URL('/authSuccess', process.env.APP_URL!));
 }

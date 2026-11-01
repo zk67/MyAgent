@@ -15,7 +15,7 @@ export async function POST() {
     const cookieStore = await cookies();
     cookieStore.delete('session_id');
     cookieStore.delete('oauth_state');
-    deleteTokens(sessionId);
+    await deleteTokens(sessionId);
     
     return NextResponse.json({ success: true });
 }

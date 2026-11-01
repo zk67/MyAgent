@@ -55,7 +55,7 @@ export async function GET(request: Request) {
     if (isSessionError(message)) {
       const sessionId = await getSessionId();
       
-      if (sessionId) deleteTokens(sessionId);
+      if (sessionId) await deleteTokens(sessionId);
       return sessionErrorResponse();
     }
     return NextResponse.json({ error: 'Unable to load calendar events' }, { status: 500 });
@@ -112,7 +112,7 @@ export async function POST(request: Request) {
 
     if (isSessionError(message)) {
       const sessionId = await getSessionId();
-      if (sessionId) deleteTokens(sessionId);
+      if (sessionId) await deleteTokens(sessionId);
       return sessionErrorResponse();
     }
     return NextResponse.json({ error: 'Unable to create the calendar event' }, { status: 500 });
@@ -147,7 +147,7 @@ export async function DELETE(request: Request) {
 
     if (isSessionError(message)) {
       const sessionId = await getSessionId();
-      if (sessionId) deleteTokens(sessionId);
+      if (sessionId) await deleteTokens(sessionId);
       return sessionErrorResponse();
     }
     return NextResponse.json({ error: 'Unable to delete the calendar event' }, { status: 500 });

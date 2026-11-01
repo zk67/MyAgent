@@ -102,6 +102,7 @@ Key routes include:
 
 - Node.js 20+
 - npm
+- PostgreSQL 15+
 
 ### Install dependencies
 
@@ -114,14 +115,33 @@ npm install
 Create a `.env.local` file in the project root with the required variables:
 
 ```bash
+APP_URL=http://localhost:3000
+DATABASE_URL=postgresql://user:password@localhost:5432/myagent
+DATABASE_SSL=false
+TOKEN_ENCRYPTION_KEY=your_base64_encoded_32_byte_key
 GEMINI_API_KEY=your_gemini_api_key
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
 GOOGLE_REDIRECT_URI=http://localhost:3000/api/callback
-NODE_ENV=development
 ```
 
-If you use additional Firebase or deployment-specific services, add those required environment values as needed.
+Generate a strong token-encryption key once and keep the same value across deployments:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+```
+
+Never commit this key. Changing or losing it makes previously stored Google tokens unreadable.
+
+### Initialize the database
+
+Run the versioned SQL migration after creating the PostgreSQL database:
+
+```bash
+npm run db:migrate
+```
+
+Google access and refresh tokens are encrypted with AES-256-GCM before being stored. Sessions expire after 30 days and survive application restarts and deployments.
 
 ### Run locally
 

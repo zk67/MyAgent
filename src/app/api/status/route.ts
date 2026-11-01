@@ -11,7 +11,7 @@ export async function GET() {
         );
     }
 
-    const tokens = getTokens(sessionId);
+    const tokens = await getTokens(sessionId);
     if (!tokens || !tokens.refreshToken) {
         return NextResponse.json(
             { connected: false, error: 'No tokens found' },
