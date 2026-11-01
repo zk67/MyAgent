@@ -33,11 +33,11 @@ export async function createCalendarEvent(input: CreateCalendarEventInput): Prom
   return data.event;
 }
 
-export async function deleteCalendarEvent(eventId: string): Promise<void> {
+export async function deleteCalendarEvent(eventId: string, confirmed: boolean): Promise<void> {
   const response = await fetch('/api/calendar', {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ eventId }),
+    body: JSON.stringify({ eventId, confirmed }),
   });
   await readResponse(response);
 }

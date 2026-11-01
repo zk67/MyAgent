@@ -131,6 +131,12 @@ export async function DELETE(request: Request) {
     if (!eventId) {
       return NextResponse.json({ error: 'Missing event ID' }, { status: 400 });
     }
+    if (body.confirmed !== true) {
+      return NextResponse.json(
+        { error: 'Explicit confirmation is required before deleting an event.' },
+        { status: 428 }
+      );
+    }
 
     await deleteEvent(sessionId, [eventId]);
     return NextResponse.json({ success: true });
