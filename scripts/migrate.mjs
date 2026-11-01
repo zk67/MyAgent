@@ -20,6 +20,7 @@ try {
   const migrationFiles = [
     'migrations/001_persistent_google_sessions.sql',
     'migrations/002_pending_deletions.sql',
+    'migrations/003_chat_rate_limit.sql',
   ];
 
   for (const file of migrationFiles) {

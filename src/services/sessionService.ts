@@ -4,6 +4,7 @@ import { query, withTransaction } from '@/lib/server/database';
 import type { CalendarTokens } from '@/types/types';
 
 export const SESSION_DURATION_SECONDS = 60 * 60 * 24 * 30;
+export const CHAT_REQUESTS_PER_MINUTE = 20;
 
 export type GoogleProfile = {
   id: string;
@@ -178,4 +179,26 @@ export async function cancelPendingDeletion(sessionId: string, requestId: string
     'DELETE FROM pending_deletions WHERE id = $1 AND session_id = $2',
     [requestId, sessionId]
   );
+}
+
+export async function allowChatRequest(sessionId: string) {
+  const result = await query<{ request_count: number }>(
+    `INSERT INTO chat_rate_limits (session_id, window_started_at, request_count)
+     VALUES ($1, NOW(), 1)
+     ON CONFLICT (session_id) DO UPDATE SET
+       window_started_at = CASE
+         WHEN chat_rate_limits.window_started_at <= NOW() - INTERVAL '1 minute'
+         THEN NOW()
+         ELSE chat_rate_limits.window_started_at
+       END,
+       request_count = CASE
+         WHEN chat_rate_limits.window_started_at <= NOW() - INTERVAL '1 minute'
+         THEN 1
+         ELSE chat_rate_limits.request_count + 1
+       END
+     RETURNING request_count`,
+    [sessionId]
+  );
+
+  return result.rows[0].request_count <= CHAT_REQUESTS_PER_MINUTE;
 }

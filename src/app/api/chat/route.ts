@@ -4,6 +4,7 @@ import { runAgent } from '@/agent-utils/agent';
 const MAX_PDF_SIZE = 10 * 1024 * 1024;
 import { cookies } from 'next/headers';
 import { ChatMessage } from '@/types/types';
+import { allowChatRequest } from '@/services/sessionService';
 
 export async function POST(request: Request) {
   const formData = await request.formData();
@@ -57,6 +58,14 @@ export async function POST(request: Request) {
   }
 
   try {
+    const canSendMessage = await allowChatRequest(sessionId);
+    if (!canSendMessage) {
+      return Response.json(
+        { error: 'Too many chat requests. Please wait a minute and try again.' },
+        { status: 429 }
+      );
+    }
+
     const result = await runAgent(messages, sessionId, file instanceof File ? file : undefined,
     );
     return Response.json(result);
