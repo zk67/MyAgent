@@ -4,6 +4,11 @@ import { cookies } from 'next/headers';
 import { saveGoogleConnection } from '@/services/sessionService';
 import { CalendarTokens } from '@/types/types';
 
+function redirectToAuthError(request: Request, reason: string) {
+  const appUrl = process.env.APP_URL || new URL(request.url).origin;
+  return NextResponse.redirect(new URL(`/authError?reason=${reason}`, appUrl));
+}
+
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const state = url.searchParams.get('state');
@@ -14,32 +19,35 @@ export async function GET(request: Request) {
   const sessionId = (await cookies()).get('session_id')?.value;
 
   if (error) {
-    return new Response('Google OAuth error', { status: 400 });
+    return redirectToAuthError(request, error === 'access_denied' ? 'access_denied' : 'connection_failed');
   }
 
   if (!state || !savedState || !code || !sessionId) {
-    return new Response('Missing OAuth data', { status: 400 });
+    return redirectToAuthError(request, 'missing_data');
   }
 
   if (state !== savedState) {
-    return new Response('Invalid OAuth state', { status: 400 });
+    return redirectToAuthError(request, 'invalid_state');
   }
 
-  const tokens = await getGoogleTokens(code);
-  if (!tokens.access_token || !tokens.refresh_token) {
-    return new Response(
-      'Google did not return the required calendar tokens. Please try connecting again.',
-      { status: 502 }
-    );
+  try {
+    const tokens = await getGoogleTokens(code);
+    if (!tokens.access_token || !tokens.refresh_token) {
+      return redirectToAuthError(request, 'connection_failed');
+    }
+
+    const calendarTokens = {
+      accessToken: tokens.access_token,
+      refreshToken: tokens.refresh_token,
+      expiresAt: tokens.expiry_date ?? undefined,
+    } satisfies CalendarTokens;
+
+    const profile = await getGoogleProfile(calendarTokens);
+    await saveGoogleConnection(sessionId, profile, calendarTokens);
+    const appUrl = process.env.APP_URL || new URL(request.url).origin;
+    return NextResponse.redirect(new URL('/authSuccess', appUrl));
+  } catch (error) {
+    console.error('Google OAuth callback failed:', error);
+    return redirectToAuthError(request, 'connection_failed');
   }
-
-  const calendarTokens = {
-    accessToken: tokens.access_token,
-    refreshToken: tokens.refresh_token,
-    expiresAt: tokens.expiry_date ?? undefined,
-  } satisfies CalendarTokens;
-
-  const profile = await getGoogleProfile(calendarTokens);
-  await saveGoogleConnection(sessionId, profile, calendarTokens);
-  return NextResponse.redirect(new URL('/authSuccess', process.env.APP_URL!));
 }
