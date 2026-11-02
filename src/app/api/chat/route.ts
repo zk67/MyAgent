@@ -8,6 +8,10 @@ const MAX_PDF_SIZE = 10 * 1024 * 1024;
 const MAX_MESSAGE_LENGTH = 2000;
 const MAX_MESSAGES = 60;
 
+function errorResponse(error: string, status: number) {
+  return Response.json({ error }, { status });
+}
+
 function isChatMessage(value: unknown): value is ChatMessage {
   if (typeof value !== 'object' || value === null) return false;
 
@@ -15,60 +19,57 @@ function isChatMessage(value: unknown): value is ChatMessage {
   return (role === 'user' || role === 'assistant') && typeof content === 'string';
 }
 
-function errorResponse(error: string, status: number) {
-  return Response.json({ error }, { status });
+// Reads the conversation sent by the browser.
+function readMessages(value: FormDataEntryValue | null): { messages: ChatMessage[] } | { error: string } {
+  if (typeof value !== 'string') return { error: 'Invalid conversation.' };
+
+  let messages: unknown;
+  try {
+    messages = JSON.parse(value);
+  } catch {
+    return { error: 'Invalid conversation format.' };
+  }
+
+  if (!Array.isArray(messages) || messages.length === 0) {
+    return { error: 'The conversation cannot be empty.' };
+  }
+  if (messages.length > MAX_MESSAGES || !messages.every(isChatMessage)) {
+    return { error: 'Invalid conversation.' };
+  }
+  return { messages };
+}
+
+// Returns an error response if the file is not a PDF we accept, otherwise null.
+async function checkPdf(file: File) {
+  if (file.type !== 'application/pdf') return errorResponse('Only PDF files are accepted.', 415);
+  if (file.size > MAX_PDF_SIZE) return errorResponse('PDF files must be 10 MB or smaller.', 413);
+
+  // A real PDF starts with "%PDF-", even if someone renamed another file.
+  const start = await file.slice(0, 5).text();
+  if (start !== '%PDF-') return errorResponse('The file does not appear to be a valid PDF.', 415);
+
+  return null;
 }
 
 export async function POST(request: Request) {
   const sessionId = (await cookies()).get('session_id')?.value;
-  if (!sessionId) {
-    return errorResponse('Please connect Google Calendar first.', 401);
-  }
+  if (!sessionId) return errorResponse('Please connect Google Calendar first.', 401);
 
   const formData = await request.formData();
-  const messagesValue = formData.get('messages');
-  const file = formData.get('file');
 
-  if (typeof messagesValue !== 'string') {
-    return errorResponse('Invalid conversation.', 400);
-  }
+  const conversation = readMessages(formData.get('messages'));
+  if ('error' in conversation) return errorResponse(conversation.error, 400);
+  const { messages } = conversation;
 
-  let messages: unknown;
-  try {
-    messages = JSON.parse(messagesValue);
-  } catch {
-    return errorResponse('Invalid conversation format.', 400);
-  }
-
-  if (!Array.isArray(messages) || messages.length === 0) {
-    return errorResponse('The conversation cannot be empty.', 400);
-  }
-  if (messages.length > MAX_MESSAGES || !messages.every(isChatMessage)) {
-    return errorResponse('Invalid conversation.', 400);
-  }
-
-  const lastMessage = messages[messages.length - 1];
-  if (lastMessage.content.length > MAX_MESSAGE_LENGTH) {
+  if (messages[messages.length - 1].content.length > MAX_MESSAGE_LENGTH) {
     return errorResponse(`The message cannot exceed ${MAX_MESSAGE_LENGTH} characters.`, 400);
   }
 
-  if (file !== null && !(file instanceof File)) {
-    return errorResponse('Invalid file.', 400);
-  }
-  if (file && file.type !== 'application/pdf') {
-    return errorResponse('Only PDF files are accepted.', 415);
-  }
-  if (file && file.size > MAX_PDF_SIZE) {
-    return errorResponse('PDF files must be 10 MB or smaller.', 413);
-  }
-  // Check the first bytes to make sure it's really a PDF, not just a renamed file.
+  const file = formData.get('file');
+  if (file !== null && !(file instanceof File)) return errorResponse('Invalid file.', 400);
   if (file) {
-    const header = new Uint8Array(await file.slice(0, 5).arrayBuffer());
-    const isPdf = header[0] === 0x25 && header[1] === 0x50 && header[2] === 0x44
-      && header[3] === 0x46 && header[4] === 0x2D; // %PDF-
-    if (!isPdf) {
-      return errorResponse('The file does not appear to be a valid PDF.', 415);
-    }
+    const pdfError = await checkPdf(file);
+    if (pdfError) return pdfError;
   }
 
   try {

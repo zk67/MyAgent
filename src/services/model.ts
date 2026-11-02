@@ -50,25 +50,3 @@ export async function askAgent(messages: Content[], file?: File) {
     },
   });
 }
-
-/**
- * Stream a response from the model, yielding text chunks as they arrive.
- * Falls back to non-streaming if the model returns tool calls (tool calls
- * cannot be streamed because they need to be executed first).
- */
-export async function askAgentStream(messages: Content[], file?: File) {
-  const contents = [...messages];
-
-  if (file) {
-    attachFile(contents, file, await file.arrayBuffer());
-  }
-
-  return ai.models.generateContentStream({
-    model: MODEL,
-    contents,
-    config: {
-      systemInstruction: buildSystemInstruction(),
-      tools: TOOLS,
-    },
-  });
-}

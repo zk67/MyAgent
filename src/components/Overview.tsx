@@ -1,72 +1,69 @@
 import '../styles/overview.css';
-import { addDays, formatEventTime, getEventId, getEventsOnDay, getEventStart, startOfDay } from '@/lib/dates';
-import { CalendarEvent } from '@/types/types';
-import { t, type Locale } from '@/lib/i18n';
 
-type OverviewProps = {
-  events: CalendarEvent[];
-  locale: Locale;
+type TodayEvent = {
+  id: string;
+  time: string;
+  title: string;
 };
 
-function countUntil(events: CalendarEvent[], today: Date, end: Date) {
-  return events.filter((event) => {
-    const start = getEventStart(event);
-    return start !== null && start >= today && start < end;
-  }).length;
-}
+type OverviewProps = {
+  eventsToday: number;
+  eventsThisWeek: number;
+  eventsNextTwoWeeks: number;
+  todaysEvents: TodayEvent[];
+};
 
-export function Overview({ events, locale }: OverviewProps) {
-  const today = startOfDay(new Date());
-  const daysUntilNextMonday = 8 - (today.getDay() || 7);
-
-  const todaysEvents = getEventsOnDay(events, today);
-  const eventsThisWeek = countUntil(events, today, addDays(today, daysUntilNextMonday));
-  const eventsNextTwoWeeks = countUntil(events, today, addDays(today, 14));
-
+export function Overview({
+  eventsToday,
+  eventsThisWeek,
+  eventsNextTwoWeeks,
+  todaysEvents,
+}: OverviewProps) {
   return (
     <div className="panel overview-card">
       <div className="overview-header">
-        <h2>{t('overview', locale)}</h2>
+        <h2>Overview</h2>
+        <button className="overview-menu-button" aria-label="Options">⋮</button>
       </div>
 
       <div className="stats-grid">
         <div className="stat-cell">
-          <div className="stat-icon" aria-hidden="true">●</div>
+          <div className="stat-icon">●</div>
           <div className="stat-text">
-            <span className="stat-value">{todaysEvents.length}</span>
-            <span className="stat-label">{t('today', locale)}</span>
+            <span className="stat-value">{eventsToday}</span>
+            <span className="stat-label">Today</span>
           </div>
         </div>
 
         <div className="stat-cell">
-          <div className="stat-icon" aria-hidden="true">📅</div>
+          <div className="stat-icon">📅</div>
           <div className="stat-text">
             <span className="stat-value">{eventsThisWeek}</span>
-            <span className="stat-label">{t('thisWeek', locale)}</span>
+            <span className="stat-label">This week</span>
           </div>
         </div>
 
         <div className="stat-cell">
-          <div className="stat-icon" aria-hidden="true">↗</div>
+          <div className="stat-icon">↗</div>
           <div className="stat-text">
             <span className="stat-value">{eventsNextTwoWeeks}</span>
-            <span className="stat-label">{t('next2Weeks', locale)}</span>
+            <span className="stat-label">Next 2 weeks</span>
           </div>
         </div>
       </div>
 
       <div className="today-events-header">
-        <h3>{t('todaysEvents', locale)}</h3>
+        <h3>Today&apos;s Events</h3>
       </div>
 
       <div className="today-events-list">
         {todaysEvents.length > 0 ? todaysEvents.map((event) => (
-          <div className="today-event-row" key={getEventId(event)}>
-            <span className="event-time">{formatEventTime(event)}</span>
-            <span className="event-title">{event.summary || 'Untitled event'}</span>
+          <div className="today-event-row" key={event.id}>
+            <span className="event-time">{event.time}</span>
+            <span className="event-title">{event.title}</span>
           </div>
         )) : (
-          <p className="no-events-message">{t('noEventsToday', locale)}</p>
+          <p className="no-events-message">No events scheduled today</p>
         )}
       </div>
     </div>

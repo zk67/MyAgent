@@ -6,7 +6,14 @@
   position: relative;
   padding: 16px 28px;
   background: var(--surface);
-  border-bottom: 2px solid var(--app-outline);
+  border-bottom: 1px solid var(--border);
+}
+
+/* Let the dashboard use the complete browser width. */
+.top-header,
+.toolbar {
+  max-width: none;
+  width: 100%;
 }
 
 .brand {
@@ -25,7 +32,7 @@
 .brand-text strong {
   display: inline-block;
   padding: 6px 0;
-  border-bottom: 3px solid var(--accent);
+  border-bottom: 0;
   font-family: var(--font-display);
   letter-spacing: 0.01em;
   font-weight: 700;
@@ -40,8 +47,10 @@
 }
 
 .top-header .header-right {
-  display: none;
+  display: flex;
 }
+.brand-text strong:before{content:'✦';display:inline-grid;place-items:center;width:32px;height:32px;margin-right:10px;border-radius:10px;background:var(--accent);color:var(--accent-contrast)}
+.toolbar{display:none!important}.top-header{height:72px}.theme-toggle{margin-left:auto}.header-right{margin-left:auto}.top-header .theme-toggle{margin-left:10px}
 
 .icon-button {
   position: relative;

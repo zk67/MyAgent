@@ -150,7 +150,8 @@ export async function newEvent(
   description?: string,
   endTime?: string,
   reminder?: number,
-  location?: string
+  location?: string,
+  showInUpcoming = true,
 ) {
   validateEventInput(title, startDate, startTime, endTime, description, location, reminder);
   const dayStart = new Date(`${startDate}T00:00:00-12:00`).toISOString();
@@ -187,6 +188,9 @@ export async function newEvent(
             overrides: [{ method: 'email', minutes: reminder }],
           }
         : undefined,
+      extendedProperties: {
+        private: { myAgentShowInUpcoming: showInUpcoming ? 'true' : 'false' },
+      },
     },
   });
 
@@ -203,6 +207,7 @@ export async function newEventWithRecurrence(
   reminder?: number,
   location?: string,
   recurrence?: string,
+  showInUpcoming = true,
 ) {
   validateEventInput(title, startDate, startTime, endTime, description, location, reminder);
 
@@ -218,6 +223,9 @@ export async function newEventWithRecurrence(
     reminders: reminder
       ? { useDefault: false, overrides: [{ method: 'email', minutes: reminder }] }
       : undefined,
+    extendedProperties: {
+      private: { myAgentShowInUpcoming: showInUpcoming ? 'true' : 'false' },
+    },
   };
 
   if (recurrence) {

@@ -1,198 +1,181 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import '@/styles/calendar.css';
-import { CalendarDay } from './CalendarDay';
 import { CalendarModal } from './CalendarModal';
-import { getCalendarEvents } from '@/lib/api/calendarClient';
-import {
-  addDays,
-  formatEventTime,
-  getEventId,
-  getEventsOnDay,
-  isSameDay,
-  startOfDay,
-  startOfWeek,
-} from '@/lib/dates';
 import { CalendarEvent } from '@/types/types';
-import { t, type Locale } from '@/lib/i18n';
-
-type View = 'month' | 'week' | 'day';
+import { getCalendarEvents } from '@/lib/api/calendarClient';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { motion } from 'motion/react';
 
 type CalendarProps = {
   refreshKey: number;
-  locale: Locale;
-  onChange: () => void;
-  onUnauthorized: () => void;
+  createdEvent?: CalendarEvent;
+  onUnauthorized?: () => void;
+  onEventsChanged?: (change: { type: 'created' | 'deleted'; event: CalendarEvent }) => void;
+  selectedDate: Date;
+  onSelectedDateChange: (date: Date) => void;
 };
 
-function getPeriod(date: Date, view: View) {
-  if (view === 'month') {
-    return { start: new Date(date.getFullYear(), date.getMonth(), 1), end: new Date(date.getFullYear(), date.getMonth() + 1, 1) };
-  }
-  if (view === 'week') {
-    const start = startOfWeek(date);
-    return { start, end: addDays(start, 7) };
-  }
-  const start = startOfDay(date);
-  return { start, end: addDays(start, 1) };
-}
+const HOUR_HEIGHT = 64;
+const DISPLAY_START_HOUR = 6;
+const DISPLAY_HOURS = 18;
+const EVENT_COLORS = ['violet', 'blue', 'green', 'coral'];
 
-function getTitle(date: Date, view: View, locale: Locale) {
-  const dateLocale = locale === 'fr' ? 'fr-CA' : 'en-US';
-  if (view === 'month') {
-    return date.toLocaleDateString(dateLocale, { month: 'long', year: 'numeric' });
-  }
-  if (view === 'week') {
-    const weekStart = startOfWeek(date).toLocaleDateString(dateLocale, { day: 'numeric', month: 'short' });
-    return locale === 'fr' ? `Semaine du ${weekStart}` : `Week of ${weekStart}`;
-  }
-  return date.toLocaleDateString(dateLocale, { weekday: 'long', day: 'numeric', month: 'long' });
-}
-
-export function Calendar({ refreshKey, locale, onChange, onUnauthorized }: CalendarProps) {
+export function Calendar({ refreshKey, createdEvent, onUnauthorized, onEventsChanged, selectedDate, onSelectedDateChange }: CalendarProps) {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [currentDate, setCurrentDate] = useState(() => new Date());
-  const [view, setView] = useState<View>('month');
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
-
-  const weekdayKeys: Array<'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'> = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
-  const viewKeys: Record<View, 'month' | 'week' | 'day'> = { month: 'month', week: 'week', day: 'day' };
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const { start, end } = getPeriod(currentDate, view);
+    const periodStart = new Date(selectedDate);
+    periodStart.setDate(periodStart.getDate() - ((periodStart.getDay() + 6) % 7));
+    periodStart.setHours(0, 0, 0, 0);
+    const periodEnd = new Date(periodStart);
+    periodEnd.setDate(periodEnd.getDate() + 7);
 
-    getCalendarEvents(start, end)
-      .then(setEvents)
+    getCalendarEvents(periodStart, periodEnd)
+      .then((calendarEvents) => setEvents(calendarEvents))
       .catch((error) => {
+        if (error instanceof Error && error.message.includes('expired')) {
+          onUnauthorized?.();
+        }
         console.error('Unable to load calendar events', error);
-        if (error instanceof Error && error.message.includes('expired')) onUnauthorized();
         setEvents([]);
       });
-  }, [refreshKey, currentDate, view, onUnauthorized]);
+  }, [refreshKey, selectedDate, onUnauthorized]);
 
-  function moveDate(direction: 1 | -1) {
-    if (view === 'month') {
-      setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + direction, 1));
-    } else {
-      setCurrentDate(addDays(currentDate, direction * (view === 'week' ? 7 : 1)));
+  useLayoutEffect(() => { if (scrollRef.current) scrollRef.current.scrollTop = 0; }, []);
+
+  const displayedEvents = createdEvent
+    ? events.some((event) => (event.id || event.eventId) === (createdEvent.id || createdEvent.eventId))
+      ? events
+      : [...events, createdEvent]
+    : events;
+
+  function moveDate(direction: number) {
+    const nextDate = new Date(selectedDate);
+    nextDate.setDate(nextDate.getDate() + direction * 7);
+    onSelectedDateChange(nextDate);
+  }
+
+  function getEventDate(event: CalendarEvent): Date | null {
+    const value = event.start.dateTime || event.start.date;
+    if (!value) return null;
+    const date = new Date(event.start.dateTime || `${value}T00:00:00`);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  function eventsForDate(date: Date): CalendarEvent[] {
+    return displayedEvents.filter((event) => {
+
+      const eventDate = getEventDate(event);
+      return eventDate !== null 
+        && eventDate.getFullYear() === date.getFullYear()
+        && eventDate.getMonth() === date.getMonth()
+        && eventDate.getDate() === date.getDate();
+    }).sort((first, second) => {
+      const firstDate = getEventDate(first)?.getTime() || 0;
+      const secondDate = getEventDate(second)?.getTime() || 0;
+      return firstDate - secondDate;
+    });
+  }
+
+  function formatEventTime(event: CalendarEvent): string {
+    if (event.start.date) return 'All day';
+
+    const date = getEventDate(event);
+    return date ? date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '';
+  }
+
+  function handleEventChanged(change: { type: 'created' | 'deleted'; event: CalendarEvent }) {
+    const changedId = change.event.id || change.event.eventId;
+
+    if (!changedId) {
+      return;
     }
+
+    setEvents((currentEvents) => {
+      if (change.type === 'created') {
+        return changedId && currentEvents.some((event) => (event.id || event.eventId) === changedId)
+          ? currentEvents
+          : [...currentEvents, change.event];
+      }
+
+      return currentEvents.filter((event) => {
+        const eventId = event.id || event.eventId;
+        return eventId !== changedId;
+      });
+    });
+    onEventsChanged?.(change);
   }
 
-  function changeView(nextView: View) {
-    setView(nextView);
-    if (nextView !== 'month') setCurrentDate(new Date());
-  }
+  const startOfWeek = new Date(selectedDate);
+  startOfWeek.setDate(selectedDate.getDate() - ((selectedDate.getDay() + 6) % 7));
+  startOfWeek.setHours(0, 0, 0, 0);
 
-  function handleDeleted(deletedEvent: CalendarEvent) {
-    const deletedId = getEventId(deletedEvent);
-    setEvents((current) => current.filter((event) => getEventId(event) !== deletedId));
-    onChange();
-  }
+  const weekDays = Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(startOfWeek);
+    date.setDate(startOfWeek.getDate() + index);
+    return date;
+  });
+  
+  const hours = Array.from({ length: DISPLAY_HOURS }, (_, index) => index + DISPLAY_START_HOUR);
 
-  function renderEventButton(event: CalendarEvent) {
-    return (
-      <button
-        type="button"
-        className="calendar-event-card calendar-event-card--list"
-        key={getEventId(event)}
-        onClick={() => setSelectedEvent(event)}
-      >
-        <span className="event-time">{formatEventTime(event)}</span>
-        <span className="event-title">{event.summary || 'Untitled event'}</span>
-      </button>
-    );
+  function laidOutEvents(date: Date) {
+    const dayStart = new Date(date);
+    dayStart.setHours(DISPLAY_START_HOUR, 0, 0, 0);
+    const dayEnd = new Date(date);
+    dayEnd.setDate(dayEnd.getDate() + 1);
+    dayEnd.setHours(0, 0, 0, 0);
+    const timed = eventsForDate(date).filter((event) => {
+      if (!event.start.dateTime) return false;
+      const start = new Date(event.start.dateTime);
+      const end = event.end.dateTime ? new Date(event.end.dateTime) : new Date(start.getTime() + 3_600_000);
+      return end > dayStart && start < dayEnd;
+    });
+    return timed.map((event, index) => {
+      const start = new Date(event.start.dateTime!);
+      const end = event.end.dateTime ? new Date(event.end.dateTime) : new Date(start.getTime() + HOUR_HEIGHT * 60_000);
+      const overlapping = timed.filter((candidate) => {
+        if (!candidate.start.dateTime) return false;
+        const candidateStart = new Date(candidate.start.dateTime);
+        const candidateEnd = candidate.end.dateTime ? new Date(candidate.end.dateTime) : new Date(candidateStart.getTime() + 3_600_000);
+        return candidateStart < end && candidateEnd > start;
+      });
+      const slot = overlapping.findIndex((candidate) => candidate === event);
+      const visibleStart = start < dayStart ? dayStart : start;
+      const visibleEnd = end > dayEnd ? dayEnd : end;
+      return { event, top: ((visibleStart.getHours() + visibleStart.getMinutes() / 60) - DISPLAY_START_HOUR) * HOUR_HEIGHT, height: Math.max(30, (visibleEnd.getTime() - visibleStart.getTime()) / 3_600_000 * HOUR_HEIGHT), width: 100 / overlapping.length, left: (Math.max(0, slot) * 100) / overlapping.length, color: EVENT_COLORS[index % EVENT_COLORS.length] };
+    });
   }
-
-  const today = new Date();
-  const { start: periodStart } = getPeriod(currentDate, view);
-  const emptyCellsBeforeFirstDay = (periodStart.getDay() + 6) % 7;
-  const daysInMonth = new Date(periodStart.getFullYear(), periodStart.getMonth() + 1, 0).getDate();
-  const monthDays = Array.from({ length: daysInMonth }, (_, index) => addDays(periodStart, index));
-  const weekDays = Array.from({ length: 7 }, (_, index) => addDays(startOfWeek(currentDate), index));
-  const dayEvents = getEventsOnDay(events, currentDate);
-  const dateLocale = locale === 'fr' ? 'fr-CA' : 'en-US';
 
   return (
-    <div className="panel calendar-window">
+    <div className="panel calendar-window week-calendar">
       <div className="calendar-header">
-        <div className="calendar-title-group">
-          <div className="calendar-nav-arrows">
-            <button type="button" onClick={() => moveDate(-1)} aria-label="Previous period">‹</button>
-            <button type="button" onClick={() => moveDate(1)} aria-label="Next period">›</button>
-          </div>
-          <h2>{getTitle(currentDate, view, locale)}</h2>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <h2>{startOfWeek.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</h2>
         </div>
 
-        <div className="view-toggle" role="group" aria-label="Calendar view">
-          {(['month', 'week', 'day'] as View[]).map((name) => (
-            <button
-              type="button"
-              key={name}
-              className={view === name ? 'active' : ''}
-              aria-pressed={view === name}
-              onClick={() => changeView(name)}
-            >
-              {t(viewKeys[name], locale)}
-            </button>
-          ))}
+        <div className="week-actions">
+          <button onClick={() => onSelectedDateChange(new Date())}>Back to today</button>
+          <div className="calendar-nav-arrows"><button onClick={() => moveDate(-1)} aria-label="Previous week"><ChevronLeft size={16} /></button><button onClick={() => moveDate(1)} aria-label="Next week"><ChevronRight size={16} /></button></div>
         </div>
       </div>
 
-      {view === 'month' && (
-        <>
-          <div className="calendar-weekdays">
-            {weekdayKeys.map((key) => <div key={key}>{t(key, locale)}</div>)}
-          </div>
-          <div className="calendar-grid">
-            {Array.from({ length: emptyCellsBeforeFirstDay }, (_, index) => (
-              <div className="calendar-day-empty" key={`empty-${index}`} />
-            ))}
-            {monthDays.map((date) => (
-              <CalendarDay
-                key={date.toISOString()}
-                date={date}
-                events={getEventsOnDay(events, date)}
-                isToday={isSameDay(date, today)}
-                onSelectEvent={setSelectedEvent}
-              />
-            ))}
-          </div>
-        </>
-      )}
-
-      {view === 'week' && (
-        <div className="calendar-week-view">
-          {weekDays.map((date) => (
-            <div
-              className={`calendar-week-column ${isSameDay(date, today) ? 'is-today' : ''}`}
-              key={date.toISOString()}
-            >
-              <div className="calendar-week-day-header">
-                <span>{date.toLocaleDateString(dateLocale, { weekday: 'short' })}</span>
-                <strong>{date.getDate()}</strong>
-              </div>
-              <div className="calendar-view-events">{getEventsOnDay(events, date).map(renderEventButton)}</div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {view === 'day' && (
-        <div className="calendar-day-view">
-          <div className="calendar-view-events">
-            {dayEvents.map(renderEventButton)}
-            {dayEvents.length === 0 && <p className="calendar-empty-message">{t('noEventsToday', locale)}</p>}
-          </div>
-        </div>
-      )}
+      <div className="timeline-scroll" ref={scrollRef}>
+        <div className="timeline-header"><div className="timezone">GMT {new Date().getTimezoneOffset() <= 0 ? '+' : '-'}{Math.abs(new Date().getTimezoneOffset() / 60)}</div>{weekDays.map((date) => <button key={date.toISOString()} className={date.toDateString() === new Date().toDateString() ? 'is-today' : ''} onClick={() => onSelectedDateChange(date)}><span>{date.toLocaleDateString('en-US', { weekday: 'short' })}</span><strong>{date.getDate()}</strong></button>)}</div>
+        <motion.div key={startOfWeek.toISOString()} className="timeline-canvas" initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ height: DISPLAY_HOURS * HOUR_HEIGHT }}>
+          <div className="time-axis">{hours.map((hour, index) => index === 0 ? null : <span key={hour} style={{ top: index * HOUR_HEIGHT }}>{new Date(2000, 0, 1, hour).toLocaleTimeString('en-US', { hour: 'numeric' })}</span>)}</div>
+          <div className="day-columns">{weekDays.map((date) => <div className={`timeline-day ${date.toDateString() === new Date().toDateString() ? 'is-today' : ''}`} key={date.toISOString()}>{hours.map((hour, index) => <i className="hour-line" style={{ top: index * HOUR_HEIGHT }} key={hour} />)}{laidOutEvents(date).map(({ event, top, height, width, left, color }) => <motion.button whileHover={{ scale: 1.025, zIndex: 4 }} whileTap={{ scale: 0.985 }} type="button" className={`timeline-event ${color}`} key={event.id || event.eventId || `${event.summary}-${top}`} style={{ top, height, width: `calc(${width}% - 4px)`, left: `${left}%` }} onClick={() => setSelectedEvent(event)}><strong>{event.summary || 'Untitled event'}</strong><span>{formatEventTime(event)}{event.end.dateTime ? ` – ${new Date(event.end.dateTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}` : ''}</span></motion.button>)}</div>)}</div>
+        </motion.div>
+      </div>
 
       {selectedEvent && (
         <CalendarModal
           event={selectedEvent}
-          locale={locale}
           onClose={() => setSelectedEvent(null)}
-          onDeleted={() => handleDeleted(selectedEvent)}
+          onDeleted={() => handleEventChanged({ type: 'deleted', event: selectedEvent })}
         />
       )}
     </div>

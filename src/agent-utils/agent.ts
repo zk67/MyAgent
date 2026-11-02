@@ -6,7 +6,6 @@ import { createPendingDeletion } from '@/services/sessionService';
 import { getEventsById, isSessionError } from '@/services/calendarService';
 
 const MAX_TOOL_ROUNDS = 10;
-const CALENDAR_CHANGING_TOOLS = new Set(['create_event', 'create_events', 'update_event']);
 
 type ToolError = { error: string };
 
@@ -55,12 +54,14 @@ function toGeminiContents(messages: ChatMessage[]): Content[] {
 async function handleToolCall(call: FunctionCall, sessionId: string) {
   if (call.name === 'delete_event') {
     const deletion = await prepareDeletion(call, sessionId);
+    
     if ('pendingDeletion' in deletion) return { pendingDeletion: deletion.pendingDeletion };
     return { output: deletion };
   }
 
   const output = await runTool(call, sessionId);
-  const changedCalendar = CALENDAR_CHANGING_TOOLS.has(call.name ?? '') && !isToolError(output);
+  const changesCalendar = call.name === 'create_event' || call.name === 'create_events' || call.name === 'update_event';
+  const changedCalendar = changesCalendar && !isToolError(output);
   return { output, changedCalendar };
 }
 

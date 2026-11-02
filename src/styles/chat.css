@@ -1,8 +1,8 @@
 .chat-panel .panel-header {
   position: relative;
-  height: 0;
-  padding: 0;
-  border-bottom: 0;
+  height: 68px;
+  padding: 0 18px;
+  border-bottom: 1px solid var(--border);
   background: transparent;
   overflow: visible;
 }
@@ -181,11 +181,11 @@
 }
 
 .chat-panel .assistant-header {
-  visibility: hidden;
+  visibility: visible;
 }
 
 .chat-panel::after {
-  content: 'MyAgent';
+  content: '';
   position: absolute;
   left: 20px;
   bottom: 10px;
@@ -198,7 +198,7 @@
 }
 
 .chat-panel::before {
-  content: 'PDF max. 10 MB';
+  content: '';
   position: absolute;
   right: 20px;
   bottom: 10px;
@@ -293,6 +293,7 @@
   color: var(--text-tertiary);
   padding-bottom: 12px;
 }
+.chat-panel{border:1px solid var(--border)}.chat-panel .messages{padding-top:18px}.chat-panel .quick-actions{display:grid;grid-template-columns:1fr 1fr;padding:10px 14px}.chat-panel .quick-action{justify-content:center;font-size:.7rem}.chat-panel .chat-form{margin:0 12px 12px;padding:7px;border:1px solid var(--border);border-radius:14px}.chat-panel .chat-form input{border:0;background:transparent}.chat-panel .disclaimer{display:none}
 
 .chat-file-status {
   flex-shrink: 0;
@@ -343,5 +344,12 @@
 }
 
 :root[data-theme='dark'] .status-dot {
-  background: #14532d;
+  background: #30d158;
+}
+
+/* Keep messages contained in the available dashboard height. */
+.chat-panel {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
 }

@@ -2,54 +2,81 @@
 
 import { useState } from 'react';
 import '@/styles/calendarday.css';
-import { formatEventTime } from '@/lib/dates';
 import { CalendarEvent } from '@/types/types';
+import { CalendarModal } from './CalendarModal';
 
 type CalendarDayProps = {
-  date: Date;
-  events: CalendarEvent[]; // already sorted by start time
+  day: number | null;
+  events: CalendarEvent[];
   isToday: boolean;
-  onSelectEvent: (event: CalendarEvent) => void;
+  onDeleted?: (event: CalendarEvent) => void;
 };
 
-export function CalendarDay({ date, events, isToday, onSelectEvent }: CalendarDayProps) {
+export function CalendarDay({ day, events, isToday, onDeleted }: CalendarDayProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // The day shows one event at a time; the arrows switch between them.
-  const safeIndex = Math.min(currentIndex, Math.max(events.length - 1, 0));
-  const currentEvent = events[safeIndex];
+  if (!day) {
+    return <div className="calendar-day-empty" />;
+  }
+
+  const sortedEvents = [...events].sort((a, b) => {
+    const timeA = a.start?.dateTime ?? a.start?.date ?? '';
+    const timeB = b.start?.dateTime ?? b.start?.date ?? '';
+    return timeA.localeCompare(timeB);
+  });
+
+  const formatTime = (dateTimeStr?: string, dateStr?: string) => {
+    if (dateStr) return 'All day';
+    if (!dateTimeStr) return '';
+    const date = new Date(dateTimeStr);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+  };
 
   const handlePrev = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setCurrentIndex(safeIndex > 0 ? safeIndex - 1 : events.length - 1);
+    setCurrentIndex((prev) => (prev > 0 ? prev - 1 : sortedEvents.length - 1));
   };
 
   const handleNext = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setCurrentIndex(safeIndex < events.length - 1 ? safeIndex + 1 : 0);
+    setCurrentIndex((prev) => (prev < sortedEvents.length - 1 ? prev + 1 : 0));
+  };
+
+  const handleDayClick = () => {
+    if (sortedEvents.length === 0) return;
+    setIsModalOpen(true);
   };
 
   const classes = ['calendar-day'];
-  if (events.length > 0) classes.push('has-events');
+  if (sortedEvents.length > 0) classes.push('has-events');
   if (isToday) classes.push('is-today');
 
+  const safeIndex = Math.min(currentIndex, Math.max(sortedEvents.length - 1, 0));
+  const currentEvent = sortedEvents[safeIndex];
+
   return (
-    <div className={classes.join(' ')} onClick={() => currentEvent && onSelectEvent(currentEvent)}>
+    <div className={classes.join(' ')} onClick={handleDayClick}>
       <div className="day-header">
-        <span className="day-number">{date.getDate()}</span>
+        <span className="day-number">{day}</span>
+
       </div>
 
-      <div className={`day-events-container ${events.length > 1 ? 'has-multiple-events' : ''}`}>
-        {currentEvent && (
+      <div className={`day-events-container ${sortedEvents.length > 1 ? 'has-multiple-events' : ''}`}>
+        {sortedEvents.length > 0 && currentEvent && (
           <div className="calendar-event-card calendar-event-card--month">
-            <span className="event-time">{formatEventTime(currentEvent)}</span>
-            <span className="event-title">{currentEvent.summary || 'Untitled event'}</span>
-            {events.length > 1 && (
+            <span className="event-time">
+              {formatTime(currentEvent.start?.dateTime, currentEvent.start?.date)}
+            </span>
+            <span className="event-title">
+              {currentEvent.summary || 'Untitled event'}
+            </span>
+            {sortedEvents.length > 1 && (
               <div className="event-nav-arrows" aria-label="Navigate between events">
                 <button type="button" onClick={handlePrev} aria-label="Previous event">
                   ‹
                 </button>
-                <span>{safeIndex + 1} / {events.length}</span>
+                <span>{safeIndex + 1} / {sortedEvents.length}</span>
                 <button type="button" onClick={handleNext} aria-label="Next event">
                   ›
                 </button>
@@ -58,6 +85,14 @@ export function CalendarDay({ date, events, isToday, onSelectEvent }: CalendarDa
           </div>
         )}
       </div>
+
+      {isModalOpen && currentEvent && (
+        <CalendarModal
+          event={currentEvent}
+          onClose={() => setIsModalOpen(false)}
+          onDeleted={() => onDeleted?.(currentEvent)}
+        />
+      )}
     </div>
   );
 }

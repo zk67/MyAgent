@@ -12,6 +12,7 @@ export type CreateCalendarEventInput = {
   description?: string;
   location?: string;
   reminder?: string;
+  showInUpcoming?: boolean;
 };
 
 export type ChatMessage = {
@@ -26,6 +27,10 @@ export type CalendarEvent = {
   summary?: string;
   description?: string;
   location?: string;
+  extendedProperties?: {
+    private?: Record<string, string>;
+    shared?: Record<string, string>;
+  };
 
   start: {
     dateTime?: string;

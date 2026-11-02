@@ -8,6 +8,7 @@
   flex-direction: column;
   min-height: 0;
 }
+.week-calendar{padding:0!important;overflow:hidden}.week-calendar .calendar-header{height:68px;margin:0;padding:0 18px;border-bottom:1px solid var(--border)}.week-calendar .calendar-header h2{font-size:1.25rem}.week-actions{display:flex;align-items:center;gap:10px}.week-actions>button{border:1px solid var(--border);border-radius:10px;padding:7px 13px;background:var(--surface);color:var(--text-primary);cursor:pointer}.week-actions .calendar-nav-arrows{margin:0}.timeline-header{display:grid;grid-template-columns:66px repeat(7,minmax(70px,1fr));height:58px;border-bottom:1px solid var(--border);background:var(--surface)}.timeline-header .timezone{display:grid;place-items:center;color:var(--text-tertiary);font-size:.61rem;border-right:1px solid var(--border)}.timeline-header button{border:0;border-right:1px solid var(--border);background:transparent;color:var(--text-secondary);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-family:var(--font-sans);cursor:pointer}.timeline-header button span{font-size:.65rem;text-transform:uppercase}.timeline-header button strong{font-size:.88rem}.timeline-header button.is-today strong{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--accent-contrast)}.timeline-scroll{flex:1;min-height:0;overflow:auto;scrollbar-color:var(--accent) transparent}.timeline-canvas{min-width:620px;position:relative;display:grid;grid-template-columns:66px 1fr}.time-axis{position:relative;border-right:1px solid var(--border);background:var(--surface)}.time-axis span{position:absolute;right:10px;transform:translateY(-50%);font-size:.62rem;color:var(--text-tertiary)}.day-columns{display:grid;grid-template-columns:repeat(7,1fr);position:relative}.timeline-day{position:relative;border-right:1px solid var(--border);background:var(--surface)}.timeline-day.is-today{background:color-mix(in srgb,var(--accent) 4%,var(--surface))}.hour-line{position:absolute;left:0;right:0;border-top:1px solid var(--border)}.timeline-event{position:absolute;z-index:2;min-height:30px;border:0;border-left:3px solid;color:#fff;border-radius:7px;padding:6px;text-align:left;overflow:hidden;cursor:pointer;font-family:var(--font-sans);box-shadow:0 3px 10px rgba(0,0,0,.13)}.timeline-event strong,.timeline-event span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.timeline-event strong{font-size:.68rem}.timeline-event span{font-size:.59rem;margin-top:3px;opacity:.86}.timeline-event.violet{background:#6f46c9;border-color:#a988ff}.timeline-event.blue{background:#2766c7;border-color:#71a6ff}.timeline-event.green{background:#16865c;border-color:#48d59a}.timeline-event.coral{background:#c84d57;border-color:#ff8f98}
 
 .panel.calendar-window {
   border: 2px solid var(--app-outline);
@@ -179,3 +180,31 @@
   color: var(--text-secondary);
   font-size: 0.85rem;
 }
+
+/* Keep the calendar inside the viewport; only the hourly grid scrolls. */
+.week-calendar {
+  height: 100%;
+  min-height: 0;
+}
+
+.timeline-scroll > .timeline-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  min-width: 620px;
+  width: 100%;
+}
+
+.timeline-scroll {
+  overflow-x: hidden;
+}
+
+.timeline-event.green {
+  background: #efbd91;
+  border-color: #d89a68;
+}
+
+.timeline-event.violet { background:#b9abe4; border-color:#9585cb; }
+.timeline-event.blue { background:#9dc8e1; border-color:#71a8c8; }
+.timeline-event.coral { background:#e5a6b8; border-color:#cb7f96; }
+.timeline-event { color:#30343f; }

@@ -2,6 +2,10 @@
   flex: 0 0 auto;
 }
 
+.event-form-panel > .panel-header {
+  padding-right: 64px;
+}
+
 .event-form-eyebrow {
   color: var(--accent);
   font-size: 0.72rem;
@@ -99,4 +103,19 @@
   .event-form-details-row {
     grid-template-columns: 1fr;
   }
+}
+.event-form-checkbox {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.event-form-checkbox input {
+  width: 17px !important;
+  height: 17px;
+  margin: 0;
+  accent-color: var(--accent);
+  flex: 0 0 auto;
 }
