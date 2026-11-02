@@ -6,6 +6,7 @@ import { createPendingDeletion } from '@/services/sessionService';
 import { getEventsById, isSessionError } from '@/services/calendarService';
 
 const MAX_TOOL_ROUNDS = 10;
+const CALENDAR_CHANGING_TOOLS = new Set(['create_event', 'create_events', 'update_event']);
 
 type ToolError = { error: string };
 
@@ -41,13 +42,30 @@ async function prepareDeletion(call: FunctionCall, sessionId: string) {
   }
 }
 
-export async function runAgent(messages: ChatMessage[], sessionId: string, file?: File) {
-  // Convert the chat history to the format Gemini expects.
-  const contents: Content[] = messages.map((message) => ({
+// Convert the chat history to the format Gemini expects.
+function toGeminiContents(messages: ChatMessage[]): Content[] {
+  return messages.map((message) => ({
     role: message.role === 'assistant' ? 'model' : 'user',
     parts: [{ text: message.content }],
   }));
+}
 
+// Handles one tool request from the model. Returns a pending deletion
+// when the user must confirm, otherwise the tool output.
+async function handleToolCall(call: FunctionCall, sessionId: string) {
+  if (call.name === 'delete_event') {
+    const deletion = await prepareDeletion(call, sessionId);
+    if ('pendingDeletion' in deletion) return { pendingDeletion: deletion.pendingDeletion };
+    return { output: deletion };
+  }
+
+  const output = await runTool(call, sessionId);
+  const changedCalendar = CALENDAR_CHANGING_TOOLS.has(call.name ?? '') && !isToolError(output);
+  return { output, changedCalendar };
+}
+
+export async function runAgent(messages: ChatMessage[], sessionId: string, file?: File) {
+  const contents = toGeminiContents(messages);
   let calendarModified = false;
   let response = await askAgent(contents, file);
 
@@ -67,25 +85,18 @@ export async function runAgent(messages: ChatMessage[], sessionId: string, file?
     // Run each requested tool and collect the results.
     const results: Part[] = [];
     for (const call of functionCalls) {
-      let output;
+      const result = await handleToolCall(call, sessionId);
 
-      if (call.name === 'delete_event') {
-        const deletion = await prepareDeletion(call, sessionId);
-        if ('pendingDeletion' in deletion) {
-          messages.push({
-            role: 'assistant',
-            content: 'Please review the events below and confirm before I delete them.',
-          });
-          return { messages, calendarModified, pendingDeletion: deletion.pendingDeletion };
-        }
-        output = deletion;
-      } else {
-        output = await runTool(call, sessionId);
-        const changesCalendar = call.name === 'create_event' || call.name === 'create_events' || call.name === 'update_event';
-        if (changesCalendar && !isToolError(output)) calendarModified = true;
+      if ('pendingDeletion' in result) {
+        messages.push({
+          role: 'assistant',
+          content: 'Please review the events below and confirm before I delete them.',
+        });
+        return { messages, calendarModified, pendingDeletion: result.pendingDeletion };
       }
 
-      results.push({ functionResponse: { id: call.id, name: call.name, response: { output } } });
+      if (result.changedCalendar) calendarModified = true;
+      results.push({ functionResponse: { id: call.id, name: call.name, response: { output: result.output } } });
     }
 
     // Give the results to the model and let it continue.
