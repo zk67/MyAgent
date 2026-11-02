@@ -1,27 +1,28 @@
 'use client';
 
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import "@/styles/calendarmodal.css";
-import { CalendarEvent } from "@/types/types";
+import '@/styles/calendarmodal.css';
 import { deleteCalendarEvent } from '@/lib/api/calendarClient';
+import { formatTime, getEventId, getEventStart } from '@/lib/dates';
+import { CalendarEvent } from '@/types/types';
+import { t, type Locale } from '@/lib/i18n';
 
 type CalendarModalProps = {
   event: CalendarEvent;
+  locale: Locale;
   onClose: () => void;
   onDeleted?: () => void;
 };
 
-export function CalendarModal({ event, onClose, onDeleted }: CalendarModalProps) {
+export function CalendarModal({ event, locale, onClose, onDeleted }: CalendarModalProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
-  const mounted = useSyncExternalStore(
-    () => () => undefined,
-    () => true,
-    () => false
-  );
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
+    closeButtonRef.current?.focus();
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
@@ -30,15 +31,15 @@ export function CalendarModal({ event, onClose, onDeleted }: CalendarModalProps)
   }, [onClose]);
 
   const title = event.summary || '(Untitled event)';
-  const startValue = event.start.dateTime || event.start.date;
   const endValue = event.end.dateTime || event.end.date;
-  const startDate = startValue ? new Date(startValue) : null;
+  const startDate = getEventStart(event);
   const endDate = endValue ? new Date(endValue) : null;
   const isAllDay = !!event.start.date;
+  const dateLocale = locale === 'fr' ? 'fr-CA' : 'en-US';
 
   const formatDate = (date: Date | null) => {
     if (!date) return '';
-    return date.toLocaleDateString('en-US', {
+    return date.toLocaleDateString(dateLocale, {
       weekday: 'long',
       month: 'long',
       day: 'numeric',
@@ -46,32 +47,28 @@ export function CalendarModal({ event, onClose, onDeleted }: CalendarModalProps)
     });
   };
 
-  const formatTime = (date: Date | null) => {
-    if (!date) return '';
-    return date.toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit' });
-  };
-
   const formatDuration = () => {
     if (isAllDay || !startDate || !endDate) return null;
     const minutes = Math.max(0, Math.round((endDate.getTime() - startDate.getTime()) / 60000));
     const hours = Math.floor(minutes / 60);
     const remainingMinutes = minutes % 60;
-    if (hours === 0) return `${remainingMinutes} min`;
-    if (remainingMinutes === 0) return `${hours} hr`;
-    return `${hours} hr ${remainingMinutes} min`;
+    if (hours === 0) return `${remainingMinutes} ${t('min', locale)}`;
+    if (remainingMinutes === 0) return `${hours} ${t('hr', locale)}`;
+    return `${hours} ${t('hr', locale)} ${remainingMinutes} ${t('min', locale)}`;
   };
 
   const duration = formatDuration();
   const reminderText = event.reminders?.overrides?.map((reminder) => {
-    const unit = reminder.minutes === 1 ? 'minute' : 'minutes';
-    return `${reminder.minutes} ${unit} before (${reminder.method})`;
+    const key = reminder.minutes === 1 ? 'minuteBefore' : 'minutesBefore';
+    return t(key, locale, { count: reminder.minutes, method: reminder.method });
   });
 
   async function handleDelete() {
-    const confirmed = window.confirm(`Delete “${title}” from your calendar? This cannot be undone.`);
+    const message = t('confirmDeleteEvent', locale, { title });
+    const confirmed = window.confirm(message);
     if (!confirmed) return;
 
-    const eventId = event.id || event.eventId;
+    const eventId = getEventId(event);
     if (!eventId || isDeleting) return;
 
     setIsDeleting(true);
@@ -82,33 +79,37 @@ export function CalendarModal({ event, onClose, onDeleted }: CalendarModalProps)
       onDeleted?.();
       onClose();
     } catch (error) {
-      setDeleteError(error instanceof Error ? error.message : 'Unable to delete the event.');
+      setDeleteError(error instanceof Error ? error.message : t('somethingWentWrong', locale));
       setIsDeleting(false);
     }
   }
 
-  if (!mounted) return null;
-
   return createPortal(
     <div className="calendar-modal-overlay" onClick={onClose}>
-      <div className="calendar-modal-panel" onClick={(e) => e.stopPropagation()}>
-        <button type="button" className="calendar-modal-close" onClick={onClose} aria-label="Close">
+      <div
+        className="calendar-modal-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="calendar-event-title"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button ref={closeButtonRef} type="button" className="calendar-modal-close" onClick={onClose} aria-label={t('close', locale)}>
           ×
         </button>
 
         <div className="calendar-modal-heading">
-          <span className="calendar-modal-kicker">Calendar event</span>
-          <h3 className="calendar-event-title">{title}</h3>
+          <span className="calendar-modal-kicker">{t('calendarEvent', locale)}</span>
+          <h3 id="calendar-event-title" className="calendar-event-title">{title}</h3>
         </div>
 
         <div className="calendar-modal-details">
           <div className="calendar-modal-detail">
             <span className="calendar-modal-detail-icon" aria-hidden="true">◷</span>
             <div>
-              <span className="calendar-modal-label">When</span>
+              <span className="calendar-modal-label">{t('when', locale)}</span>
               <strong>{formatDate(startDate)}</strong>
               <span className="calendar-modal-detail-value">
-                {isAllDay ? 'All day' : `${formatTime(startDate)}${endDate ? ` – ${formatTime(endDate)}` : ''}`}
+                {isAllDay ? t('allDay', locale) : `${startDate ? formatTime(startDate) : ''}${endDate ? ` – ${formatTime(endDate)}` : ''}`}
               </span>
             </div>
           </div>
@@ -117,7 +118,7 @@ export function CalendarModal({ event, onClose, onDeleted }: CalendarModalProps)
             <div className="calendar-modal-detail">
               <span className="calendar-modal-detail-icon" aria-hidden="true">↔</span>
               <div>
-                <span className="calendar-modal-label">Duration</span>
+                <span className="calendar-modal-label">{t('duration', locale)}</span>
                 <strong>{duration}</strong>
               </div>
             </div>
@@ -127,7 +128,7 @@ export function CalendarModal({ event, onClose, onDeleted }: CalendarModalProps)
             <div className="calendar-modal-detail">
               <span className="calendar-modal-detail-icon" aria-hidden="true">⌖</span>
               <div>
-                <span className="calendar-modal-label">Location</span>
+                <span className="calendar-modal-label">{t('location', locale)}</span>
                 <strong>{event.location}</strong>
               </div>
             </div>
@@ -136,14 +137,14 @@ export function CalendarModal({ event, onClose, onDeleted }: CalendarModalProps)
 
         {event.description && (
           <div className="calendar-modal-section">
-            <span className="calendar-modal-section-title">Description</span>
+            <span className="calendar-modal-section-title">{t('description', locale)}</span>
             <p className="calendar-event-description">{event.description}</p>
           </div>
         )}
 
         {reminderText && reminderText.length > 0 && (
           <div className="calendar-modal-section">
-            <span className="calendar-modal-section-title">Reminders</span>
+            <span className="calendar-modal-section-title">{t('reminders', locale)}</span>
             <div className="calendar-modal-reminders">
               {reminderText.map((reminder) => <span key={reminder}>{reminder}</span>)}
             </div>
@@ -156,9 +157,9 @@ export function CalendarModal({ event, onClose, onDeleted }: CalendarModalProps)
             type="button"
             className="calendar-modal-delete"
             onClick={handleDelete}
-            disabled={isDeleting || !(event.id || event.eventId)}
+            disabled={isDeleting || !getEventId(event)}
           >
-            {isDeleting ? 'Deleting...' : 'Delete event'}
+            {isDeleting ? t('deletingEvent', locale) : t('deleteEventFull', locale)}
           </button>
         </div>
       </div>

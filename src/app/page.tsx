@@ -1,171 +1,134 @@
 'use client';
-import { useEffect, useState } from 'react';
-import { Chat } from '@/components/Chat';
+import { useCallback, useEffect, useState } from 'react';
 import { Calendar } from '@/components/Calendar';
+import { Chat } from '@/components/Chat';
 import { ConnectWidget } from '@/components/ConnectWidget';
-import { Overview } from '@/components/Overview';
 import { EventForm } from '@/components/EventForm';
 import { Navbar } from '@/components/Navbar';
+import { Overview } from '@/components/Overview';
+import { Settings } from '@/components/Settings';
+import { addDays, startOfDay, startOfWeek } from '@/lib/dates';
 import { CalendarEvent } from '@/types/types';
+import type { Locale } from '@/lib/i18n';
 import '@/styles/page.css';
 
 export default function HomePage() {
-  const [refreshKey, setRefreshKey] = useState(0);
-  const [connectedState, setConnectedState] = useState(false);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'create'>('dashboard');
+  const [isConnected, setIsConnected] = useState(false);
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'create' | 'settings'>('dashboard');
   const [overviewEvents, setOverviewEvents] = useState<CalendarEvent[]>([]);
-  const [createdEvent, setCreatedEvent] = useState<CalendarEvent | undefined>();
+  const [locale, setLocale] = useState<Locale>('fr');
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  const refreshCalendarData = (change?: { type: 'created' | 'deleted'; event: CalendarEvent }) => {
-    if (change?.type === 'created') {
-      setCreatedEvent(change.event);
-      setOverviewEvents((currentEvents) => [...currentEvents, change.event]);
-    }
-    if (change?.type === 'deleted') {
-      const deletedId = change.event.id || change.event.eventId;
-      setCreatedEvent(undefined);
-      setOverviewEvents((currentEvents) => currentEvents.filter((event) => (event.id || event.eventId) !== deletedId));
-    }
-    setRefreshKey((prev) => prev + 1);
-  };
+  const refreshCalendar = useCallback(() => setRefreshKey((key) => key + 1), []);
+  const disconnect = useCallback(() => setIsConnected(false), []);
 
-  const onDisconnect = async () => {
-    const data = await fetch( '/api/auth/logout', {
-      method: 'POST'
-    });
-    const response = await data.json();
-    if (response.success) {
-      setConnectedState(false);
-    }else{
-      console.error('Failed to disconnect');
+  async function logOut() {
+    try {
+      const response = await fetch('/api/auth/logout', { method: 'POST' });
+      const data = await response.json();
+      if (data.success) setIsConnected(false);
+    } catch (error) {
+      console.error('Failed to log out', error);
     }
   }
 
-  const checkStatus = () => {
-    fetch('/api/status')
-      .then((response) => response.json())
-      .then((data) => {
-        setConnectedState(data.connected);
-        if (data.connected) setRefreshKey((previous) => previous + 1);
-      });
-  };
+  async function deleteAccount() {
+    try {
+      const response = await fetch('/api/account', { method: 'DELETE' });
+      const data = await response.json();
+      if (data.success) setIsConnected(false);
+    } catch (error) {
+      console.error('Failed to delete account', error);
+    }
+  }
 
+  // Check the connection on load, and again when the Google popup says it succeeded.
   useEffect(() => {
-    checkStatus();
+    let cancelled = false;
 
-    const handleAuthMessage = (event: MessageEvent) => {
-      if (event.data?.type === 'GOOGLE_AUTH_SUCCESS') {
-        checkStatus();
-        setRefreshKey((prev) => prev + 1);
-      };
+    async function fetchStatus() {
+      try {
+        const response = await fetch('/api/status');
+        const data = await response.json();
+        if (!cancelled) {
+          setIsConnected(Boolean(data.connected));
+          if (data.preferences?.locale) {
+            setLocale(data.preferences.locale as Locale);
+          }
+        }
+      } catch {
+        if (!cancelled) setIsConnected(false);
+      }
+    }
+
+    fetchStatus();
+
+    function handleMessage(event: MessageEvent) {
+      if (event.origin === window.location.origin && event.data?.type === 'GOOGLE_AUTH_SUCCESS') {
+        fetchStatus();
+      }
+    }
+    window.addEventListener('message', handleMessage);
+    return () => {
+      cancelled = true;
+      window.removeEventListener('message', handleMessage);
     };
-    window.addEventListener('message', handleAuthMessage);
-    return () => window.removeEventListener('message', handleAuthMessage);
   }, []);
 
+  // The overview needs this week plus the next two weeks.
   useEffect(() => {
-    if (!connectedState) return;
+    if (!isConnected) return;
 
-    const today = new Date();
-    const startOfWeek = new Date(today);
-    const dayOfWeek = startOfWeek.getDay();
-    const daysSinceMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-    startOfWeek.setDate(startOfWeek.getDate() - daysSinceMonday);
-    startOfWeek.setHours(0, 0, 0, 0);
+    const from = startOfWeek(new Date());
+    const to = addDays(startOfDay(new Date()), 15);
+    const params = new URLSearchParams({ from: from.toISOString(), to: to.toISOString() });
 
-    const endOfWindow = new Date(today);
-    endOfWindow.setDate(endOfWindow.getDate() + 14);
-    endOfWindow.setHours(23, 59, 59, 999);
-
-    fetch(`/api/calendar?from=${encodeURIComponent(startOfWeek.toISOString())}&to=${encodeURIComponent(endOfWindow.toISOString())}`, { cache: 'no-store' })
-      .then((response) => response.ok ? response.json() : Promise.reject(new Error('Calendar request failed')))
+    fetch(`/api/calendar?${params}`, { cache: 'no-store' })
+      .then((response) => (response.ok ? response.json() : Promise.reject(new Error('Request failed'))))
       .then((data) => setOverviewEvents(data.events || []))
       .catch(() => setOverviewEvents([]));
-  }, [connectedState, refreshKey]);
-
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
-  const tomorrowStart = new Date(todayStart);
-  tomorrowStart.setDate(tomorrowStart.getDate() + 1);
-
-  const weekEnd = new Date(todayStart);
-  weekEnd.setDate(weekEnd.getDate() + (8 - (weekEnd.getDay() || 7)));
-
-  const twoWeeksEnd = new Date(todayStart);
-  twoWeeksEnd.setDate(twoWeeksEnd.getDate() + 14);
-
-  const getEventDate = (event: CalendarEvent) => {
-    const value = event.start.dateTime || event.start.date;
-    if (!value) return null;
-    const date = new Date(event.start.dateTime || `${value}T00:00:00`);
-    return Number.isNaN(date.getTime()) ? null : date;
-  };
-
-  const eventsWithDates = overviewEvents
-    .map((event) => ({ event, date: getEventDate(event) }))
-    .filter((item): item is { event: CalendarEvent; date: Date } => item.date !== null);
-
-  const todaysEvents = eventsWithDates
-    .filter(({ date }) => date >= todayStart && date < tomorrowStart)
-    .map(({ event, date }) => ({
-      id: event.id || event.eventId || `${date.getTime()}`,
-      time: event.start.dateTime ? date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'All day',
-      title: event.summary || 'Untitled event',
-    }));
-
-  const eventsToday = todaysEvents.length;
-  const eventsThisWeek = eventsWithDates.filter(({ date }) => date >= todayStart && date < weekEnd).length;
-  const eventsNextTwoWeeks = eventsWithDates.filter(({ date }) => date >= todayStart && date < twoWeeksEnd).length;
+  }, [isConnected, refreshKey]);
 
   return (
     <main className="app-shell">
       <Navbar
-        userName="Brandon"
         activeTab={activeTab}
+        locale={locale}
         onTabChange={setActiveTab}
-        onDisconnect={onDisconnect}
-        isConnected={connectedState}
+        onLogOut={logOut}
+        isConnected={isConnected}
       />
 
       <div className="app-body">
-        {connectedState ? (
-          <section className="workspace">
-            <Calendar
-              refreshKey={refreshKey}
-              createdEvent={createdEvent}
-              onUnauthorized={() => setConnectedState(false)}
-              onEventsChanged={refreshCalendarData}
-            />
+        <section className="workspace">
+          {isConnected ? (
+            activeTab === 'settings' ? (
+              <Settings
+                locale={locale}
+                onLocaleChange={setLocale}
+                onDeleteAccount={deleteAccount}
+              />
+            ) : (
+              <>
+                <Calendar
+                  refreshKey={refreshKey}
+                  locale={locale}
+                  onChange={refreshCalendar}
+                  onUnauthorized={disconnect}
+                />
 
-            <div className={`side-column ${activeTab === 'create' ? 'create-mode' : ''}`}>
-              {activeTab === 'create' ? (
-                <>
-                  <Overview
-                    eventsToday={eventsToday}
-                    eventsThisWeek={eventsThisWeek}
-                    eventsNextTwoWeeks={eventsNextTwoWeeks}
-                    todaysEvents={todaysEvents}
-                  />
-                  <EventForm onEventCreated={(event) => refreshCalendarData({ type: 'created', event })} />
-                </>
-              ) : (
-                <>
-                  <Overview
-                    eventsToday={eventsToday}
-                    eventsThisWeek={eventsThisWeek}
-                    eventsNextTwoWeeks={eventsNextTwoWeeks}
-                    todaysEvents={todaysEvents}
-                  />
-                  <Chat onEventCreated={() => refreshCalendarData()} />
-                </>
-              )}
-            </div>
-          </section>
-        ) : (
-          <section className="workspace">
-            <ConnectWidget />
-          </section>
-        )}
+                {/* Both panels stay mounted so the chat is not lost when switching tabs. */}
+                <div className="side-column">
+                  <Overview events={overviewEvents} locale={locale} />
+                  <Chat hidden={activeTab !== 'dashboard'} locale={locale} onCalendarChanged={refreshCalendar} />
+                  <EventForm hidden={activeTab !== 'create'} locale={locale} onEventCreated={refreshCalendar} />
+                </div>
+              </>
+            )
+          ) : (
+            <ConnectWidget locale={locale} />
+          )}
+        </section>
       </div>
     </main>
   );

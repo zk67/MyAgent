@@ -1,4 +1,4 @@
-import { GoogleGenAI, Content} from '@google/genai';
+import { GoogleGenAI, Content } from '@google/genai';
 import { SYSTEM_PROMPT, TOOLS, MODEL } from '@/agent-utils/config';
 
 export const ai = new GoogleGenAI({
@@ -6,42 +6,69 @@ export const ai = new GoogleGenAI({
 });
 
 export function getTodayInMontreal(date: Date = new Date()) {
-    return new Intl.DateTimeFormat('en-CA', {
-        timeZone: 'America/Montreal',
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-    }).format(date);
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Montreal',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date);
+}
+
+function buildSystemInstruction() {
+  return `${SYSTEM_PROMPT}\n\nDate d'aujourd'hui : ${getTodayInMontreal()} (fuseau horaire : America/Montreal).`;
+}
+
+function attachFile(contents: Content[], file: File, fileBytes: ArrayBuffer) {
+  const attachment = {
+    inlineData: {
+      mimeType: file.type || 'application/pdf',
+      data: Buffer.from(fileBytes).toString('base64'),
+    },
+  };
+
+  const lastUserMessage = [...contents].reverse().find((c) => c.role === 'user');
+  if (lastUserMessage) {
+    lastUserMessage.parts = [...(lastUserMessage.parts || []), attachment];
+  } else {
+    contents.push({ role: 'user', parts: [attachment] });
+  }
 }
 
 export async function askAgent(messages: Content[], file?: File) {
-    const contents = [...messages];
+  const contents = [...messages];
 
-    if (file) {
-        const bytes = await file.arrayBuffer();
-        const attachment = {
-            inlineData: {
-                mimeType: file.type || 'application/pdf',
-                data: Buffer.from(bytes).toString('base64'),
-            },
-        };
+  if (file) {
+    attachFile(contents, file, await file.arrayBuffer());
+  }
 
-        // Keep the PDF in the same user turn as the request so the model
-        // clearly associates the attachment with the user's question.
-        const lastUserMessage = [...contents].reverse().find((content) => content.role === 'user');
-        if (lastUserMessage) {
-            lastUserMessage.parts = [...(lastUserMessage.parts || []), attachment];
-        } else {
-            contents.push({ role: 'user', parts: [attachment] });
-        }
-    }
+  return ai.models.generateContent({
+    model: MODEL,
+    contents,
+    config: {
+      systemInstruction: buildSystemInstruction(),
+      tools: TOOLS,
+    },
+  });
+}
 
-    return ai.models.generateContent({
-        model: MODEL,
-        contents,
-        config: {
-            systemInstruction: `${SYSTEM_PROMPT}\n\nDate d'aujourd'hui : ${getTodayInMontreal()} (fuseau horaire : America/Montreal).`,
-            tools: TOOLS,
-        }
-    });
+/**
+ * Stream a response from the model, yielding text chunks as they arrive.
+ * Falls back to non-streaming if the model returns tool calls (tool calls
+ * cannot be streamed because they need to be executed first).
+ */
+export async function askAgentStream(messages: Content[], file?: File) {
+  const contents = [...messages];
+
+  if (file) {
+    attachFile(contents, file, await file.arrayBuffer());
+  }
+
+  return ai.models.generateContentStream({
+    model: MODEL,
+    contents,
+    config: {
+      systemInstruction: buildSystemInstruction(),
+      tools: TOOLS,
+    },
+  });
 }

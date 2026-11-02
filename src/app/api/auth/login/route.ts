@@ -1,9 +1,23 @@
 import { NextResponse } from 'next/server';
 import { createOAuth2client } from '@/services/authService';
-import { cookies } from 'next/headers';
-import { createSession, SESSION_DURATION_SECONDS } from '@/services/sessionService';
+import { cookies, headers } from 'next/headers';
+import { allowLoginRequest, createSession, SESSION_DURATION_SECONDS } from '@/services/sessionService';
 
 export async function GET() {
+  const headerStore = await headers();
+  const ip = headerStore.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+
+  try {
+    if (!(await allowLoginRequest(ip))) {
+      return NextResponse.json(
+        { error: 'Too many login attempts. Please wait a minute.' },
+        { status: 429 }
+      );
+    }
+  } catch {
+    // If the rate limit table doesn't exist yet, let the request through.
+  }
+
   const oauthClient = createOAuth2client();
   const state = crypto.randomUUID();
   const sessionId = crypto.randomUUID();

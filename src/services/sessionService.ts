@@ -5,6 +5,7 @@ import type { CalendarTokens } from '@/types/types';
 
 export const SESSION_DURATION_SECONDS = 60 * 60 * 24 * 30;
 export const CHAT_REQUESTS_PER_MINUTE = 20;
+export const LOGIN_REQUESTS_PER_MINUTE = 10;
 
 export type GoogleProfile = {
   id: string;
@@ -20,6 +21,8 @@ type StoredConnection = {
 };
 
 export async function createSession(sessionId: string) {
+  // Clean up old sessions each time a new one starts.
+  await query('DELETE FROM app_sessions WHERE expires_at < NOW()');
   await query(
     `INSERT INTO app_sessions (id, expires_at)
      VALUES ($1, NOW() + ($2 * INTERVAL '1 second'))`,
@@ -140,29 +143,6 @@ export async function createPendingDeletion(sessionId: string, events: { id: str
   return { id: requestId, events };
 }
 
-export async function getPendingDeletion(sessionId: string) {
-  const result = await query<{
-    id: string;
-    event_ids: string[];
-    event_titles: string[];
-  }>(
-    `SELECT id, event_ids, event_titles FROM pending_deletions
-     WHERE session_id = $1 AND expires_at > NOW()`,
-    [sessionId]
-  );
-
-  const pending = result.rows[0];
-  if (!pending) return undefined;
-
-  return {
-    id: pending.id,
-    events: pending.event_ids.map((id, index) => ({
-      id,
-      title: pending.event_titles[index] || 'Untitled event',
-    })),
-  };
-}
-
 export async function consumePendingDeletion(sessionId: string, requestId: string) {
   const result = await query<{ event_ids: string[] }>(
     `DELETE FROM pending_deletions
@@ -201,4 +181,26 @@ export async function allowChatRequest(sessionId: string) {
   );
 
   return result.rows[0].request_count <= CHAT_REQUESTS_PER_MINUTE;
+}
+
+export async function allowLoginRequest(ipAddress: string) {
+  const result = await query<{ request_count: number }>(
+    `INSERT INTO login_rate_limits (ip_address, window_started_at, request_count)
+     VALUES ($1, NOW(), 1)
+     ON CONFLICT (ip_address) DO UPDATE SET
+       window_started_at = CASE
+         WHEN login_rate_limits.window_started_at <= NOW() - INTERVAL '1 minute'
+         THEN NOW()
+         ELSE login_rate_limits.window_started_at
+       END,
+       request_count = CASE
+         WHEN login_rate_limits.window_started_at <= NOW() - INTERVAL '1 minute'
+         THEN 1
+         ELSE login_rate_limits.request_count + 1
+       END
+     RETURNING request_count`,
+    [ipAddress]
+  );
+
+  return result.rows[0].request_count <= LOGIN_REQUESTS_PER_MINUTE;
 }

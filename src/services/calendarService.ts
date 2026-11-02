@@ -8,7 +8,17 @@ import {
   updateSessionTokens,
 } from '@/services/sessionService';
 
-const MAX_EVENTS_PER_DAY = 7;
+const MAX_EVENTS_PER_DAY = 20;
+const TIME_ZONE = 'America/Montreal';
+
+// True when the error means the user must sign in with Google again.
+export function isSessionError(message: string) {
+  return (
+    message.includes('No tokens found') ||
+    message.includes('No refresh token') ||
+    message.includes('invalid_grant')
+  );
+}
 
 export const getTokens = getSessionTokens;
 export const deleteTokens = deleteSession;
@@ -40,25 +50,6 @@ export async function getCalendarClient(sessionId: string) {
   });
 
   return google.calendar({ version: 'v3', auth: authClient });
-}
-
-export async function getGoogleUserProfile(sessionId: string) {
-  const tokens = await getTokens(sessionId);
-
-  if (!tokens) {
-    throw new Error('No tokens found for the given session ID.');
-  }
-
-  const authClient = createOAuth2client();
-  authClient.setCredentials({
-    access_token: tokens.accessToken,
-    refresh_token: tokens.refreshToken,
-    expiry_date: tokens.expiresAt,
-  });
-
-  const oauth2 = google.oauth2({ version: 'v2', auth: authClient });
-  const response = await oauth2.userinfo.get();
-  return response.data;
 }
 
 function addOneHour(time: string) {
@@ -122,8 +113,22 @@ function validateEventInput(
     throw new Error('Reminder must be a whole number between 0 and 40320 minutes.');
   }
 
-  const dateTime = new Date(`${startDate}T${startTime}:00-05:00`);
-  if (dateTime.getTime() <= Date.now()) throw new Error('Event start must be in the future.');
+  // Both strings look like "2026-11-01 18:30", so they can be compared as text.
+  if (`${startDate} ${startTime}` <= getNowInMontreal()) {
+    throw new Error('Event start must be in the future.');
+  }
+}
+
+function getNowInMontreal() {
+  return new Intl.DateTimeFormat('sv-SE', {
+    timeZone: TIME_ZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).format(new Date());
 }
 
 function getEventDate(event: CalendarEvent): string | null {
@@ -170,11 +175,11 @@ export async function newEvent(
       location: location || undefined,
       start: {
         dateTime: `${startDate}T${startTime}:00`,
-        timeZone: 'America/Montreal',
+        timeZone: TIME_ZONE,
       },
       end: {
         dateTime: `${startDate}T${eventEndTime}:00`,
-        timeZone: 'America/Montreal',
+        timeZone: TIME_ZONE,
       },
       reminders: reminder
         ? {
@@ -185,6 +190,43 @@ export async function newEvent(
     },
   });
 
+  return response.data;
+}
+
+export async function newEventWithRecurrence(
+  sessionId: string,
+  title: string,
+  startTime: string,
+  startDate: string,
+  description?: string,
+  endTime?: string,
+  reminder?: number,
+  location?: string,
+  recurrence?: string,
+) {
+  validateEventInput(title, startDate, startTime, endTime, description, location, reminder);
+
+  const calendar = await getCalendarClient(sessionId);
+  const eventEndTime = endTime || addOneHour(startTime);
+
+  const requestBody: Record<string, unknown> = {
+    summary: title,
+    description: description || '',
+    location: location || undefined,
+    start: { dateTime: `${startDate}T${startTime}:00`, timeZone: TIME_ZONE },
+    end: { dateTime: `${startDate}T${eventEndTime}:00`, timeZone: TIME_ZONE },
+    reminders: reminder
+      ? { useDefault: false, overrides: [{ method: 'email', minutes: reminder }] }
+      : undefined,
+  };
+
+  if (recurrence) {
+    // Accept "RRULE:..." or just "FREQ=WEEKLY;COUNT=13" etc.
+    const rule = recurrence.startsWith('RRULE:') ? recurrence : `RRULE:${recurrence}`;
+    requestBody.recurrence = [rule];
+  }
+
+  const response = await calendar.events.insert({ calendarId: 'primary', requestBody });
   return response.data;
 }
 
@@ -213,7 +255,7 @@ export async function updateEvent(sessionId: string, event: CalendarEvent, updat
     throw new Error('Updated event title is required.');
   }
   if (update.summary !== undefined && update.summary.length > 100) {
-    throw new Error('Updated event title is required and must be at most 100 characters.');
+    throw new Error('Updated event title must be at most 100 characters.');
   }
   if (update.description !== undefined && update.description.length > 500) {
     throw new Error('Event description must be at most 500 characters.');
@@ -226,10 +268,10 @@ export async function updateEvent(sessionId: string, event: CalendarEvent, updat
   const startTimestamp = startValue ? Date.parse(startValue) : undefined;
   const endTimestamp = endValue ? Date.parse(endValue) : undefined;
 
-  if (startValue && startTimestamp === undefined || Number.isNaN(startTimestamp)) {
+  if (startTimestamp !== undefined && Number.isNaN(startTimestamp)) {
     throw new Error('Updated event start is invalid.');
   }
-  if (endValue && Number.isNaN(endTimestamp)) {
+  if (endTimestamp !== undefined && Number.isNaN(endTimestamp)) {
     throw new Error('Updated event end is invalid.');
   }
   if (startTimestamp !== undefined && startTimestamp <= Date.now()) {
