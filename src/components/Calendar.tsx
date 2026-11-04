@@ -135,14 +135,17 @@ export function Calendar({ refreshKey, createdEvent, onUnauthorized, onEventsCha
       return end > dayStart && start < dayEnd;
     });
     return timed.map((event, index) => {
+
       const start = new Date(event.start.dateTime!);
       const end = event.end.dateTime ? new Date(event.end.dateTime) : new Date(start.getTime() + HOUR_HEIGHT * 60_000);
+
       const overlapping = timed.filter((candidate) => {
         if (!candidate.start.dateTime) return false;
         const candidateStart = new Date(candidate.start.dateTime);
         const candidateEnd = candidate.end.dateTime ? new Date(candidate.end.dateTime) : new Date(candidateStart.getTime() + 3_600_000);
         return candidateStart < end && candidateEnd > start;
       });
+      
       const slot = overlapping.findIndex((candidate) => candidate === event);
       const visibleStart = start < dayStart ? dayStart : start;
       const visibleEnd = end > dayEnd ? dayEnd : end;

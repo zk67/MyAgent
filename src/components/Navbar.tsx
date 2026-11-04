@@ -11,28 +11,43 @@ type NavbarProps = {
   isConnected : boolean;
 };
 
+function applyTheme(dark: boolean) {
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  document.documentElement.classList.toggle('dark', dark);
+}
+
+function systemPrefersDark() {
+  return window.matchMedia('(prefers-color-scheme: dark)').matches;
+}
+
 export function Navbar({ activeTab, onTabChange, onDisconnect, isConnected }: NavbarProps) {
   const [isDarkMode, setIsDarkMode] = useState(false);
 
+  // The page already has the right theme (see the script in layout.tsx);
+  // this only syncs the toggle button with it.
   useEffect(() => {
     const savedTheme = window.localStorage.getItem('theme');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const dark = savedTheme ? savedTheme === 'dark' : prefersDark;
+    const dark = savedTheme ? savedTheme === 'dark' : systemPrefersDark();
     // The theme is read from browser-only storage after hydration.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsDarkMode(dark);
-    document.documentElement.dataset.theme = dark ? 'dark' : 'light';
-    document.documentElement.classList.toggle('dark', dark);
+    applyTheme(dark);
   }, []);
 
   function toggleTheme() {
-    setIsDarkMode((current) => {
-      const next = !current;
-      document.documentElement.dataset.theme = next ? 'dark' : 'light';
-      document.documentElement.classList.toggle('dark', next);
-      window.localStorage.setItem('theme', next ? 'dark' : 'light');
-      return next;
-    });
+    const dark = !isDarkMode;
+    setIsDarkMode(dark);
+    applyTheme(dark);
+    window.localStorage.setItem('theme', dark ? 'dark' : 'light');
+  }
+
+  // Logging out forgets the chosen theme and goes back to the system default.
+  function handleDisconnect() {
+    const dark = systemPrefersDark();
+    window.localStorage.removeItem('theme');
+    setIsDarkMode(dark);
+    applyTheme(dark);
+    onDisconnect();
   }
 
   return (
@@ -46,14 +61,14 @@ export function Navbar({ activeTab, onTabChange, onDisconnect, isConnected }: Na
 
         {isConnected && (
         <div className="header-right">
-          <button className="icon-button" aria-label="Notifications">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
-              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+          <button className="disconnect-button" type="button" onClick={handleDisconnect}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M16 17l5-5-5-5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M21 12H9" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            <span className="notif-dot" />
+            Log out
           </button>
-
         </div>
         )}
         <button

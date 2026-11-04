@@ -91,7 +91,7 @@ export function ScheduleSidebar({ selectedDate, events, onSelectDate, onCreate }
         <div className="side-card-heading"><h2>Upcoming events</h2><span>{upcoming.length} total</span></div>
         <div className="upcoming-list">
           {upcoming.map(({ event, start }, index) => (
-            <motion.div className="upcoming-row" initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} whileHover={{ x: 3 }} key={event.id || event.eventId || start.toISOString()}>
+            <motion.div className="upcoming-row" initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} key={event.id || event.eventId || start.toISOString()}>
               <i style={{ background: COLORS[index % COLORS.length] }} />
               <div><strong>{event.summary || 'Untitled event'}</strong><span>{start.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} · {event.start.date ? 'All day' : start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</span></div>
             </motion.div>

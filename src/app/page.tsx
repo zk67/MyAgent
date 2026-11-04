@@ -13,6 +13,8 @@ import { AnimatePresence, motion, MotionConfig } from 'motion/react';
 export default function HomePage() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [connectedState, setConnectedState] = useState(false);
+  // False until /api/status has answered, so the connect screen doesn't flash for a user who is already connected.
+  const [statusChecked, setStatusChecked] = useState(false);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'create'>('dashboard');
   const [overviewEvents, setOverviewEvents] = useState<CalendarEvent[]>([]);
   const [createdEvent, setCreatedEvent] = useState<CalendarEvent | undefined>();
@@ -53,7 +55,9 @@ export default function HomePage() {
       .then((data) => {
         setConnectedState(data.connected);
         if (data.connected) setRefreshKey((previous) => previous + 1);
-      });
+      })
+      .catch(() => setConnectedState(false))
+      .finally(() => setStatusChecked(true));
   };
 
   useEffect(() => {
@@ -114,6 +118,8 @@ export default function HomePage() {
               {activeTab === 'create' && <motion.div className="event-form-overlay" role="dialog" aria-modal="true" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><motion.div initial={{ opacity: 0, y: 14, scale: 0.985 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 8, scale: 0.99 }}><EventForm onClose={() => setActiveTab('dashboard')} onEventCreated={(event) => { refreshCalendarData({ type: 'created', event }); setActiveTab('dashboard'); }} /></motion.div></motion.div>}
             </AnimatePresence>
           </section>
+        ) : !statusChecked ? (
+          <section className="workspace" aria-busy="true" />
         ) : (
           <section className="workspace">
             <ConnectWidget />
