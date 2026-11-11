@@ -18,8 +18,8 @@ export default async function AuthErrorPage({
   return (
     <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', padding: 24 }}>
       <section style={{ maxWidth: 420, textAlign: 'center' }}>
-        <h1>Calendar connection failed</h1>
-        <p>{message}</p>
+        <h1 style={{ fontSize: 44, lineHeight: 1 }}>Connection <em>failed</em></h1>
+        <p style={{ color: 'var(--text-secondary)', margin: '16px 0 24px' }}>{message}</p>
         <AuthErrorActions />
       </section>
     </main>

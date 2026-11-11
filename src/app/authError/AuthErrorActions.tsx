@@ -2,7 +2,7 @@
 
 export default function AuthErrorActions() {
   return (
-    <button type="button" onClick={() => window.close()}>
+    <button type="button" className="button-primary" onClick={() => window.close()}>
       Close window
     </button>
   );

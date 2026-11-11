@@ -93,61 +93,75 @@ export default function HomePage() {
   return (
     <MotionConfig reducedMotion="user" transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}>
     <main className="app-shell">
-      <Navbar
-        userName="Brandon"
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        onDisconnect={onDisconnect}
-        isConnected={connectedState}
-      />
+      <Navbar onDisconnect={onDisconnect} isConnected={connectedState} />
 
       <div className="app-body">
-        {connectedState ? (
-          <section className="workspace">
-            <ScheduleSidebar selectedDate={selectedDate} events={overviewEvents} onSelectDate={setSelectedDate} onCreate={() => setActiveTab('create')} />
-            <Calendar
-              refreshKey={refreshKey}
-              createdEvent={createdEvent}
-              onUnauthorized={handleUnauthorized}
-              onEventsChanged={refreshCalendarData}
-              selectedDate={selectedDate}
-              onSelectedDateChange={setSelectedDate}
-            />
-            <Chat onEventCreated={() => refreshCalendarData()} />
-            <AnimatePresence>
-              {activeTab === 'create' && (
-                <motion.div
-                  className="event-form-overlay"
-                  role="dialog"
-                  aria-modal="true"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                >
-                  <motion.div
-                    initial={{ opacity: 0, y: 14, scale: 0.985 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 8, scale: 0.99 }}
-                  >
-                    <EventForm
-                      onClose={() => setActiveTab('dashboard')}
-                      onEventCreated={(event) => {
-                        refreshCalendarData({ type: 'created', event });
-                        setActiveTab('dashboard');
-                      }}
-                    />
-                  </motion.div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </section>
-        ) : !statusChecked ? (
-          <section className="workspace" aria-busy="true" />
-        ) : (
-          <section className="workspace">
-            <ConnectWidget />
-          </section>
-        )}
+        {/* Signing in or out swaps the two pages: the old one fades out, then the new one comes in. */}
+        <AnimatePresence mode="wait">
+          {!statusChecked ? (
+            <section key="loading" className="workspace" aria-busy="true" />
+          ) : !connectedState ? (
+            // Opacity only: a movement here would break the painting's fixed position.
+            <motion.div
+              key="intro"
+              className="page-view"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.45 }}
+            >
+              <ConnectWidget />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="dashboard"
+              className="page-view"
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.45 }}
+            >
+              <section className="workspace">
+                <ScheduleSidebar selectedDate={selectedDate} events={overviewEvents} onSelectDate={setSelectedDate} onCreate={() => setActiveTab('create')} />
+                <Calendar
+                  refreshKey={refreshKey}
+                  createdEvent={createdEvent}
+                  onUnauthorized={handleUnauthorized}
+                  onEventsChanged={refreshCalendarData}
+                  selectedDate={selectedDate}
+                  onSelectedDateChange={setSelectedDate}
+                />
+                <Chat onEventCreated={() => refreshCalendarData()} />
+                <AnimatePresence>
+                  {activeTab === 'create' && (
+                    <motion.div
+                      className="event-form-overlay"
+                      role="dialog"
+                      aria-modal="true"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                    >
+                      <motion.div
+                        initial={{ opacity: 0, y: 14, scale: 0.985 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 8, scale: 0.99 }}
+                      >
+                        <EventForm
+                          onClose={() => setActiveTab('dashboard')}
+                          onEventCreated={(event) => {
+                            refreshCalendarData({ type: 'created', event });
+                            setActiveTab('dashboard');
+                          }}
+                        />
+                      </motion.div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </section>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </main>
     </MotionConfig>

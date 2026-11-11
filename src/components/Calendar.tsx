@@ -35,7 +35,7 @@ const DISPLAY_HOURS = 18; // ...and ends at midnight
 const ONE_HOUR_MS = 3_600_000;
 const MIN_EVENT_HEIGHT = 30;
 const COMPACT_EVENT_HEIGHT = 48; // below this, an event only shows its title
-const EVENT_COLORS = ['violet', 'blue', 'green', 'coral'];
+const EVENT_COLORS = ['lapis', 'verdigris', 'ochre', 'madder']; // Renaissance pigments
 
 // ---------- Date helpers ----------
 
@@ -227,16 +227,14 @@ export function Calendar({ refreshKey, createdEvent, onUnauthorized, onEventsCha
   return (
     <div className="panel calendar-window week-calendar">
       <div className="calendar-header">
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <h2>{weekStart.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</h2>
-        </div>
+        <h2>
+          <em>{weekStart.toLocaleDateString('en-US', { month: 'long' })}</em> {weekStart.getFullYear()}
+        </h2>
 
         <div className="week-actions">
-          <button onClick={() => onSelectedDateChange(new Date())}>Back to today</button>
-          <div className="calendar-nav-arrows">
-            <button onClick={() => moveWeek(-1)} aria-label="Previous week"><ChevronLeft size={16} /></button>
-            <button onClick={() => moveWeek(1)} aria-label="Next week"><ChevronRight size={16} /></button>
-          </div>
+          <button type="button" className="button-quiet" onClick={() => onSelectedDateChange(new Date())}>Today</button>
+          <button type="button" className="icon-button" onClick={() => moveWeek(-1)} aria-label="Previous week"><ChevronLeft size={16} /></button>
+          <button type="button" className="icon-button" onClick={() => moveWeek(1)} aria-label="Next week"><ChevronRight size={16} /></button>
         </div>
       </div>
 
