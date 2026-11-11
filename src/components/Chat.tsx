@@ -3,7 +3,7 @@ import { ChangeEvent, FormEvent, useEffect, useRef, useState } from 'react';
 import '@/styles/chat.css';
 import { respondToDeletion, sendChatMessage } from '@/lib/api/chatClient';
 import { ChatMessage } from '@/types/types';
-import { Bot, FileText, Send } from 'lucide-react';
+import { ArrowUp, Paperclip } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 
 const MAX_PDF_SIZE = 10 * 1024 * 1024;
@@ -129,26 +129,7 @@ export function Chat({ onEventCreated }: ChatProps) {
   return (
   <section className="panel chat-panel">
     <div className="panel-header">
-      <div className="assistant-header">
-        <div className="assistant-avatar"><Bot size={19} /></div>
-        <div>
-          <div className="assistant-name">MyAgent</div>
-          <div className="assistant-status">
-            <span className="status-dot" />
-            Online
-        </div>
-      </div>
-      <button
-        type="button"
-        className="chat-attach-button"
-        onClick={() => fileInputRef.current?.click()}
-        aria-label="Attach a PDF"
-        title="Attach a PDF"
-      >
-        <FileText size={16} />
-      </button>
-    </div>
-      <button className="overview-menu-button" aria-label="Options">⋮</button>
+      <h2 className="assistant-name">Ask MyAgent</h2>
     </div>
 
     <div className="messages" ref={scrollRef}>
@@ -164,26 +145,19 @@ export function Chat({ onEventCreated }: ChatProps) {
       {loading && <div className="typing">Thinking...</div>}
     </div>
 
-    <div className="quick-actions">
-      <button
-        type="button"
-        className="quick-action chat-attach-quick-button"
-        onClick={() => fileInputRef.current?.click()}
-        aria-label="Attach a PDF"
-        title="Attach a PDF"
-      >
-        <FileText size={15} /> PDF
-      </button>
-      <button type="button" className="quick-action" onClick={() => handleQuickAction('Schedule a meeting')}>Schedule a meeting</button>
-      <button type="button" className="quick-action" onClick={() => handleQuickAction('Check my emails')}>Check my emails</button>
-      <button type="button" className="quick-action" onClick={() => handleQuickAction('Summarize my day')}>Summarize my day</button>
-    </div>
-
-    {pendingDeletion && (
-      <div className="quick-actions" role="group" aria-label="Confirm event deletion">
-        <span>Events to delete: {pendingDeletion.events.map((event) => event.title).join(', ')}</span>
-        <button type="button" className="quick-action" disabled={loading} onClick={() => handleDeletionResponse(true)}>Confirm deletion</button>
-        <button type="button" className="quick-action" disabled={loading} onClick={() => handleDeletionResponse(false)}>Cancel</button>
+    {pendingDeletion ? (
+      <div className="deletion-confirm" role="group" aria-label="Confirm event deletion">
+        <p>Delete {pendingDeletion.events.map((event) => event.title).join(', ')}?</p>
+        <div>
+          <button type="button" className="button-quiet" disabled={loading} onClick={() => handleDeletionResponse(false)}>Keep</button>
+          <button type="button" className="button-danger" disabled={loading} onClick={() => handleDeletionResponse(true)}>Delete</button>
+        </div>
+      </div>
+    ) : (
+      <div className="quick-actions">
+        <button type="button" className="quick-action" onClick={() => handleQuickAction('What do I have this week?')}>My week</button>
+        <button type="button" className="quick-action" onClick={() => handleQuickAction('What is my next exam or deadline?')}>Next deadline</button>
+        <button type="button" className="quick-action" onClick={() => handleQuickAction('Summarize my day')}>My day</button>
       </div>
     )}
 
@@ -196,15 +170,24 @@ export function Chat({ onEventCreated }: ChatProps) {
         onChange={handleFileChange}
         aria-label="Attach a PDF"
       />
+      <button
+        type="button"
+        className="chat-attach-button"
+        onClick={() => fileInputRef.current?.click()}
+        aria-label="Attach a PDF"
+        title="Attach a PDF"
+      >
+        <Paperclip size={17} />
+      </button>
       <input
         value={input}
         maxLength={2000}
         onChange={(event) => setInput(event.target.value)}
-        placeholder="Ask something..."
+        placeholder="Ask about your schedule, or attach a PDF"
         aria-label="Message"
       />
-      <button type="submit" disabled={loading || (!input.trim() && !selectedFile)} aria-label="Send">
-        <Send size={16} />
+      <button type="submit" className="chat-send-button" disabled={loading || (!input.trim() && !selectedFile)} aria-label="Send">
+        <ArrowUp size={17} />
       </button>
     </form>
 

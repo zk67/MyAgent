@@ -4,6 +4,7 @@ import { FormEvent, useState } from 'react';
 import '@/styles/eventform.css';
 import { CalendarEvent } from '@/types/types';
 import { createCalendarEvent } from '@/lib/api/calendarClient';
+import { X } from 'lucide-react';
 
 type EventFormProps = {
   onEventCreated: (event: CalendarEvent) => void;
@@ -88,12 +89,13 @@ export function EventForm({ onEventCreated, onClose }: EventFormProps) {
 
   return (
     <section className={`panel event-form-panel ${status ? `has-${status.type}` : ''}`}>
-      {onClose && <button type="button" className="event-form-close" onClick={onClose} aria-label="Close">×</button>}
       <div className="panel-header">
-        <div>
-          <div className="event-form-eyebrow">Calendar</div>
-          <h2 className="event-form-title">Create an event</h2>
-        </div>
+        <h2 className="event-form-title">New event</h2>
+        {onClose && (
+          <button type="button" className="icon-button" onClick={onClose} aria-label="Close">
+            <X size={16} />
+          </button>
+        )}
       </div>
 
       <form className="event-form" onSubmit={handleSubmit}>
@@ -145,7 +147,13 @@ export function EventForm({ onEventCreated, onClose }: EventFormProps) {
           <span>Show this event in Upcoming events</span>
         </label>
 
-        <button className="event-form-submit" type="submit" disabled={loading}>
+        {status && (
+          <p className={`event-form-status ${status.type}`} role={status.type === 'error' ? 'alert' : 'status'}>
+            {status.message}
+          </p>
+        )}
+
+        <button className="button-primary event-form-submit" type="submit" disabled={loading}>
           {loading ? 'Creating...' : 'Create event'}
         </button>
       </form>

@@ -6,6 +6,7 @@ import "@/styles/calendarmodal.css";
 import { CalendarEvent } from "@/types/types";
 import { deleteCalendarEvent } from '@/lib/api/calendarClient';
 import { motion } from 'motion/react';
+import { Clock, Hourglass, MapPin, X } from 'lucide-react';
 
 type CalendarModalProps = {
   event: CalendarEvent;
@@ -90,18 +91,15 @@ export function CalendarModal({ event, onClose, onDeleted }: CalendarModalProps)
   return createPortal(
     <motion.div className="calendar-modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={onClose}>
       <motion.div className="calendar-modal-panel" initial={{ opacity: 0, y: 12, scale: 0.985 }} animate={{ opacity: 1, y: 0, scale: 1 }} onClick={(e) => e.stopPropagation()}>
-        <button type="button" className="calendar-modal-close" onClick={onClose} aria-label="Close">
-          ×
+        <button type="button" className="icon-button calendar-modal-close" onClick={onClose} aria-label="Close">
+          <X size={16} />
         </button>
 
-        <div className="calendar-modal-heading">
-          <span className="calendar-modal-kicker">Calendar event</span>
-          <h3 className="calendar-event-title">{title}</h3>
-        </div>
+        <h3 className="calendar-event-title">{title}</h3>
 
         <div className="calendar-modal-details">
           <div className="calendar-modal-detail">
-            <span className="calendar-modal-detail-icon" aria-hidden="true">◷</span>
+            <Clock className="calendar-modal-detail-icon" size={17} aria-hidden="true" />
             <div>
               <span className="calendar-modal-label">When</span>
               <strong>{formatDate(startDate)}</strong>
@@ -113,7 +111,7 @@ export function CalendarModal({ event, onClose, onDeleted }: CalendarModalProps)
 
           {duration && (
             <div className="calendar-modal-detail">
-              <span className="calendar-modal-detail-icon" aria-hidden="true">↔</span>
+              <Hourglass className="calendar-modal-detail-icon" size={17} aria-hidden="true" />
               <div>
                 <span className="calendar-modal-label">Duration</span>
                 <strong>{duration}</strong>
@@ -123,7 +121,7 @@ export function CalendarModal({ event, onClose, onDeleted }: CalendarModalProps)
 
           {event.location && (
             <div className="calendar-modal-detail">
-              <span className="calendar-modal-detail-icon" aria-hidden="true">⌖</span>
+              <MapPin className="calendar-modal-detail-icon" size={17} aria-hidden="true" />
               <div>
                 <span className="calendar-modal-label">Location</span>
                 <strong>{event.location}</strong>

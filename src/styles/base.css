@@ -1,62 +1,151 @@
-@import '@radix-ui/colors/slate.css';
-@import '@radix-ui/colors/slate-dark.css';
-@import '@radix-ui/colors/blue.css';
-@import '@radix-ui/colors/blue-dark.css';
-@import '@radix-ui/colors/indigo.css';
-@import '@radix-ui/colors/indigo-dark.css';
-@import '@radix-ui/colors/violet.css';
-@import '@radix-ui/colors/violet-dark.css';
-@import '@radix-ui/colors/orange.css';
-@import '@radix-ui/colors/orange-dark.css';
-@import '@radix-ui/colors/crimson.css';
-@import '@radix-ui/colors/crimson-dark.css';
+/* ==========================================================================
+   Design tokens
+   Vellum paper, sepia ink and Renaissance pigments.
+   ========================================================================== */
 
 :root {
-  --bg: #f6f5f8;
-  --surface: #fefefe;
-  --surface-days: #f0f1f5;
-  --border: #e0e2e8;
-  --text-primary: #30343f;
-  --text-secondary: #686e7b;
-  --text-tertiary: #979ca7;
-  --accent: #91a9c5;
-  --accent-soft: #e9eff6;
-  --accent-contrast: #263444;
-  --app-outline: #d6dee9;
-  --workspace-line: rgba(125, 137, 155, 0.055);
+  /* Paper and ink */
+  --bg: #f3ecdc;            /* vellum */
+  --surface: #faf6ec;       /* a lighter sheet laid on top */
+  --surface-sunk: #ece3cf;  /* hollows: inputs, hover */
+  --border: #ddd1b8;
+  --border-strong: #c7b796;
+  --text-primary: #231d15;  /* sepia ink */
+  --text-secondary: #6b5f4c;
+  --text-tertiary: #9a8d75;
+  --dot: rgba(35, 29, 21, 0.13); /* the canvas dot grid */
 
-  --font-display: 'SF Pro Rounded', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-sans: 'SF Pro Rounded', 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  /* Pigments */
+  --lapis: #2a4a9b;         /* main action color */
+  --lapis-soft: #dfe4f2;
+  --on-lapis: #f7f3e8;
+  --gold: #a8843a;
+  --madder: #a83a3a;        /* errors and deletion */
 
-  --radius-lg: 20px;
-  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.04), 0 12px 32px rgba(0, 0, 0, 0.06);
+  /* Event colors, one per pigment */
+  --event-lapis: #d9def0;
+  --event-lapis-ink: #22396f;
+  --event-verdigris: #d6e6dc;
+  --event-verdigris-ink: #1f5a45;
+  --event-ochre: #f0e0bb;
+  --event-ochre-ink: #6e4f12;
+  --event-madder: #f0d6d2;
+  --event-madder-ink: #7a2a2a;
+
+  --font-display: var(--font-serif), 'Times New Roman', serif;
+  --font-body: var(--font-sans), system-ui, sans-serif;
+
+  --radius: 14px;
+  --radius-small: 9px;
+  --shadow: 0 1px 0 rgba(35, 29, 21, 0.04), 0 10px 30px -18px rgba(35, 29, 21, 0.35);
 }
 
 :root[data-theme='dark'] {
-  --bg: #17181d;
-  --surface: #202228;
-  --surface-days: #292c33;
-  --border: #393d47;
-  --text-primary: #f1f2f5;
-  --text-secondary: #bcc1cb;
-  --text-tertiary: #858b98;
-  --accent: #9db4d0;
-  --accent-soft: #303b49;
-  --accent-contrast: #202b38;
-  --app-outline: #465466;
-  --workspace-line: rgba(255, 255, 255, 0.045);
-  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.35), 0 12px 32px rgba(0, 0, 0, 0.3);
+  /* Charcoal: almost black, no tint, so the accent stands out */
+  --bg: #141414;
+  --surface: #1c1c1c;
+  --surface-sunk: #262626;
+  --border: #2f2f2f;
+  --border-strong: #3e3e3e;
+  --text-primary: #ece8e0;
+  --text-secondary: #a8a39a;
+  --text-tertiary: #77736b;
+  --dot: rgba(236, 232, 224, 0.07);
+
+  --lapis: #8fa6e6;
+  --lapis-soft: #252d45;
+  --on-lapis: #141a2c;
+  --gold: #cfaa5c;
+  --madder: #e08a80;
+
+  --event-lapis: #2a3352;
+  --event-lapis-ink: #c9d4f5;
+  --event-verdigris: #22392f;
+  --event-verdigris-ink: #bfe0cf;
+  --event-ochre: #3d3220;
+  --event-ochre-ink: #ecd6a4;
+  --event-madder: #42261f;
+  --event-madder-ink: #f0c4bc;
+
+  --shadow: 0 1px 0 rgba(0, 0, 0, 0.3), 0 12px 30px -16px rgba(0, 0, 0, 0.7);
 }
+
+/* ==========================================================================
+   Base
+   ========================================================================== */
 
 * {
   box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+/* The whole app sits on an "infinite canvas": paper with a fine dot grid. */
+body {
+  background-color: var(--bg);
+  background-image: radial-gradient(var(--dot) 1px, transparent 1.2px);
+  background-size: 22px 22px;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  /* The interface behaves like an app, not a document: no text cursor or selection on titles and grids */
+  cursor: default;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* ...except where copying text is useful */
+input,
+textarea,
+.message p,
+.calendar-event-title,
+.calendar-event-description,
+.calendar-modal-detail strong,
+.calendar-modal-detail-value {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+input,
+textarea {
+  cursor: text;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  margin: 0;
 }
 
 button,
 input,
 select,
 textarea {
-  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+  font: inherit;
+  color: inherit;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+button {
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--lapis);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--lapis-soft);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -70,21 +159,85 @@ textarea {
   }
 }
 
-html,
-body {
-  height: 100%;
+/* Shared building blocks */
+
+.panel {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
-  margin: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
 }
 
-body {
-  background: var(--bg);
-  background-image:
-    linear-gradient(var(--workspace-line) 1px, transparent 1px),
-    linear-gradient(90deg, var(--workspace-line) 1px, transparent 1px);
-  background-size: 32px 32px;
+.panel-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.button-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 999px;
+  padding: 11px 20px;
+  background: var(--lapis);
+  color: var(--on-lapis);
+  font-weight: 500;
+}
+
+.button-primary:hover {
+  background: color-mix(in srgb, var(--lapis) 86%, black);
+}
+
+.button-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.button-quiet {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 7px 14px;
+  background: transparent;
   color: var(--text-primary);
-  font-family: var(--font-sans);
-  -webkit-font-smoothing: antialiased;
-  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.button-quiet:hover {
+  background: var(--surface-sunk);
+}
+
+.icon-button {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.icon-button:hover {
+  background: var(--surface-sunk);
+  color: var(--text-primary);
+}
+
+/* Thin scrollbars everywhere */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
 }

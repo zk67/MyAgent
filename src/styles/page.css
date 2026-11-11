@@ -1,180 +1,95 @@
+/* ==========================================================================
+   App shell and dashboard layout
+   ========================================================================== */
+
 .app-shell {
-  position: relative;
-  z-index: 1;
   height: 100vh;
   display: flex;
   flex-direction: column;
-  /* max-width: 1400px; */
-  margin: 0 auto;
   overflow: hidden;
-  padding: 0;
 }
 
 .app-body {
-  position: relative;
-  max-height: none;
-  height: auto;
-  flex: 1 1 0;
+  flex: 1;
   min-height: 0;
-  width: 100%;
-  max-width: none;
-  margin: 0 auto;
-  padding: 16px 12px 18px;
-  display: flex;          /* ← AJOUTÉ */
-  flex-direction: column; /* ← AJOUTÉ */
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
 }
 
-
+/* Three columns: sidebar, week calendar, chat */
 .workspace {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(240px,310px) minmax(400px,1fr) minmax(310px,390px);
-  grid-template-rows: minmax(0, 1fr);
-  gap: 18px;
+  grid-template-columns: minmax(240px, 290px) minmax(420px, 1fr) minmax(300px, 380px);
+  gap: 16px;
+  padding: 4px clamp(12px, 2vw, 24px) 20px;
 }
 
-@media (max-width: 1050px) {
+.workspace > * {
+  min-height: 0;
+}
+
+@media (max-width: 1100px) {
   .workspace {
-    grid-template-columns: minmax(210px,240px) minmax(340px,1fr) minmax(270px,310px);
+    grid-template-columns: minmax(220px, 250px) minmax(360px, 1fr) minmax(280px, 320px);
     gap: 12px;
   }
 }
-.workspace>.chat-panel{min-height:0;height:auto;max-height:100%}.workspace>.calendar-window{height:auto;max-height:100%;min-height:0}.event-form-overlay{position:fixed;z-index:50;inset:0;background:rgba(7,8,12,.62);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:24px}.event-form-overlay .event-form-panel{position:relative;width:min(720px,100%);max-height:90vh}.event-form-close{position:absolute;z-index:2;top:16px;right:16px;width:32px;height:32px;border:0;border-radius:50%;background:var(--surface-days);color:var(--text-secondary);font-size:20px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer}.event-form-close:hover{background:var(--border);color:var(--text-primary)}
-.event-form-overlay>div{width:min(720px,100%)}
-@media(max-width:800px){html,body{overflow:auto}.app-shell{height:auto;min-height:100dvh;overflow:visible}.app-body{overflow:visible;padding:12px}.workspace{display:flex;flex-direction:column}.schedule-sidebar{overflow:visible}.calendar-window{height:min(680px,calc(100dvh - 96px))!important;min-height:520px!important}.workspace>.chat-panel{height:min(620px,calc(100dvh - 96px));min-height:480px;max-height:none}}
 
-.side-column {
+/* "Create event" dialog */
+.event-form-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
   display: flex;
-  flex-direction: column;
-  gap: 20px;
-  min-height: 0;
-  overflow: hidden;
-}
-
-.side-column > :first-child {
-  flex: 0 0 auto;
-  min-height: 250px;
-}
-
-/* Chat et formulaire se partagent tout l'espace restant sous Overview */
-.side-column > .chat-panel,
-.side-column > .event-form-panel {
-  flex: 1 1 0;
-  min-height: 0;
-}
-
-.panel {
-  min-height: 0;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-soft);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.panel-header {
-  flex-shrink: 0;
-  padding: 18px 22px;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(23, 20, 15, 0.45);
+  backdrop-filter: blur(6px);
 }
 
-.workspace {
-  position: relative;
-  z-index: 1;
+.event-form-overlay > div {
+  width: min(640px, 100%);
 }
 
-/* Give the event list priority in the left rail while keeping the summary compact. */
-.schedule-sidebar .upcoming-card {
-  flex: 0 0 180px;
-  min-height: 180px;
-  overflow: hidden;
+/* Phones and small tablets: everything stacks and the page scrolls */
+@media (max-width: 860px) {
+  html,
+  body {
+    overflow: auto;
+  }
+
+  .app-shell {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+
+  .app-body {
+    overflow: visible;
+  }
+
+  .workspace {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .workspace > .calendar-window {
+    height: min(640px, calc(100dvh - 90px));
+  }
+
+  .workspace > .chat-panel {
+    height: min(600px, calc(100dvh - 90px));
+  }
 }
 
-.schedule-sidebar .upcoming-list {
+/* Wrapper used to animate the switch between the intro page and the dashboard */
+.page-view {
+  flex: 1;
   min-height: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding-right: 6px;
-  scrollbar-width: thin;
-  scrollbar-color: var(--accent) transparent;
-}
-
-.schedule-sidebar .breakdown-card {
-  flex: 0 0 184px;
-  min-height: 184px;
-}
-
-.schedule-sidebar .breakdown-card .donut {
-  width: 112px;
-  height: 112px;
-}
-
-.schedule-sidebar .breakdown-card .donut::before {
-  inset: 13px;
-}
-
-.schedule-sidebar .breakdown-card .donut strong {
-  font-size: 1.08rem;
-}
-
-/* Subtle variations from one restrained blue-lilac family. */
-.schedule-sidebar .mini-calendar {
-  background: #f7f9fc;
-  border-color: #dce3ec;
-}
-
-.schedule-sidebar .upcoming-card {
-  background: #f7f6fa;
-  border-color: #e1dfe9;
-}
-
-.schedule-sidebar .breakdown-card {
-  background: #f3f6f8;
-  border-color: #dce2e6;
-}
-
-.workspace > .chat-panel {
-  background: #f8f9fb;
-  border-color: #dfe3e9;
-}
-
-:root[data-theme='dark'] .schedule-sidebar .mini-calendar {
-  background: #222831;
-  border-color: #35404d;
-}
-
-:root[data-theme='dark'] .schedule-sidebar .upcoming-card {
-  background: #272630;
-  border-color: #3d3a49;
-}
-
-:root[data-theme='dark'] .schedule-sidebar .breakdown-card {
-  background: #23292d;
-  border-color: #384247;
-}
-
-:root[data-theme='dark'] .workspace > .chat-panel {
-  background: #23262c;
-  border-color: #383d46;
-}
-
-/* Upcoming events: scroll inside the card when the list is too long */
-.schedule-sidebar .upcoming-card {
   display: flex;
   flex-direction: column;
-}
-.schedule-sidebar .upcoming-card .side-card-heading {
-  flex-shrink: 0;
-}
-.schedule-sidebar .upcoming-list {
-  flex: 1 1 0;
-  min-height: 0;
-  overflow-y: auto;
 }

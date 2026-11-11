@@ -12,7 +12,7 @@ type Props = {
   onCreate: () => void;
 };
 
-const COLORS = ['#a99bdb', '#8fbfda', '#e9aa80', '#dda0b2'];
+const COLORS = ['var(--event-lapis-ink)', 'var(--event-verdigris-ink)', 'var(--event-ochre-ink)', 'var(--event-madder-ink)'];
 const WEEKDAY_LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 const DAY_START_HOUR = 6; // free time is counted from 6 AM to midnight
 const HOURS_PER_WEEK = 18 * 7;
@@ -78,8 +78,8 @@ function getUpcomingEvents(events: CalendarEvent[], now: Date) {
 
 function formatUpcomingDate(event: CalendarEvent, start: Date) {
   const day = start.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-  const time = event.start.date ? 'All day' : start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-  return `${day} · ${time}`;
+  const time = event.start.date ? 'all day' : start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  return `${day}, ${time}`;
 }
 
 // ---------- Sidebar ----------
@@ -116,9 +116,9 @@ export function ScheduleSidebar({ selectedDate, events, onSelectDate, onCreate }
       <section className="mini-calendar side-card">
         <div className="side-card-heading">
           <h2>{selectedDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</h2>
-          <div>
-            <button onClick={() => moveMonth(-1)} aria-label="Previous month"><ChevronLeft size={15} /></button>
-            <button onClick={() => moveMonth(1)} aria-label="Next month"><ChevronRight size={15} /></button>
+          <div className="side-card-arrows">
+            <button type="button" className="icon-button" onClick={() => moveMonth(-1)} aria-label="Previous month"><ChevronLeft size={15} /></button>
+            <button type="button" className="icon-button" onClick={() => moveMonth(1)} aria-label="Next month"><ChevronRight size={15} /></button>
           </div>
         </div>
 
@@ -145,8 +145,8 @@ export function ScheduleSidebar({ selectedDate, events, onSelectDate, onCreate }
 
       <section className="side-card upcoming-card">
         <div className="side-card-heading">
-          <h2>Upcoming events</h2>
-          <span>{upcoming.length} total</span>
+          <h2>Upcoming</h2>
+          <span>{upcoming.length}</span>
         </div>
 
         <div className="upcoming-list">
@@ -170,7 +170,7 @@ export function ScheduleSidebar({ selectedDate, events, onSelectDate, onCreate }
 
       <section className="side-card breakdown-card">
         <div className="side-card-heading">
-          <h2>Weekly time breakdown</h2>
+          <h2>This week</h2>
         </div>
 
         <div className="breakdown-main">
@@ -187,8 +187,8 @@ export function ScheduleSidebar({ selectedDate, events, onSelectDate, onCreate }
         </div>
       </section>
 
-      <motion.button whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }} className="new-event-button" onClick={onCreate}>
-        <Plus size={18} /> Create event
+      <motion.button whileTap={{ scale: 0.98 }} className="button-primary new-event-button" onClick={onCreate}>
+        <Plus size={18} /> New event
       </motion.button>
     </aside>
   );
