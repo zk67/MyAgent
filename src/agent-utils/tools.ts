@@ -6,7 +6,7 @@ import {
   deleteEvent,
 } from '@/services/calendarService';
 import type { CalendarEvent } from '@/types/types';
-import type { FunctionCall } from '@google/genai';
+import type Anthropic from '@anthropic-ai/sdk';
 
 type BatchEventInput = {
   title?: string;
@@ -19,15 +19,15 @@ type BatchEventInput = {
   recurrence?: string;
 };
 
-export async function executeTool(functionCall: FunctionCall, sessionId: string) {
-  const args = functionCall.args ?? {};
+export async function executeTool(toolRequest: Anthropic.ToolUseBlock, sessionId: string) {
+  const args = (toolRequest.input ?? {}) as Record<string, unknown>;
 
   const stringArgument = (name: string) => {
     const value = args[name];
     return typeof value === 'string' ? value : undefined;
   };
 
-  switch (functionCall.name) {
+  switch (toolRequest.name) {
     case 'get_events': {
       const result = await getEvents(
         sessionId,
@@ -100,6 +100,6 @@ export async function executeTool(functionCall: FunctionCall, sessionId: string)
     }
 
     default:
-      throw new Error(`Unknown tool: ${functionCall.name}`);
+      throw new Error(`Unknown tool: ${toolRequest.name}`);
   }
 }

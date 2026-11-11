@@ -38,7 +38,7 @@ Once authenticated, the app loads event data from Google Calendar and displays i
 - a list of events for the current date
 
 ### AI assistant chat
-The assistant is connected to a Gemini model and supports interactions related to scheduling and event management. The UI includes a chat panel for direct communication with the assistant.
+The assistant is connected to Claude Haiku 5.5 (Anthropic API) and supports interactions related to scheduling and event management. The UI includes a chat panel for direct communication with the assistant.
 
 ### Event creation and refresh flow
 Users can create events through the app UI, and the dashboard refreshes afterward so the latest calendar data is immediately visible.
@@ -50,7 +50,7 @@ Users can create events through the app UI, and the dashboard refreshes afterwar
 - TypeScript
 - App Router
 - Google APIs
-- Google GenAI / Gemini
+- Anthropic Claude API (Claude Haiku 5.5)
 - Firebase Admin
 - CSS Modules / global CSS
 
@@ -119,7 +119,7 @@ APP_URL=http://localhost:3000
 DATABASE_URL=postgresql://user:password@localhost:5432/myagent
 DATABASE_SSL=false
 TOKEN_ENCRYPTION_KEY=your_base64_encoded_32_byte_key
-GEMINI_API_KEY=your_gemini_api_key
+ANTHROPIC_API_KEY=your_anthropic_api_key
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
 GOOGLE_REDIRECT_URI=http://localhost:3000/api/callback

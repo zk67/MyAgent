@@ -115,7 +115,30 @@ export default function HomePage() {
             />
             <Chat onEventCreated={() => refreshCalendarData()} />
             <AnimatePresence>
-              {activeTab === 'create' && <motion.div className="event-form-overlay" role="dialog" aria-modal="true" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><motion.div initial={{ opacity: 0, y: 14, scale: 0.985 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 8, scale: 0.99 }}><EventForm onClose={() => setActiveTab('dashboard')} onEventCreated={(event) => { refreshCalendarData({ type: 'created', event }); setActiveTab('dashboard'); }} /></motion.div></motion.div>}
+              {activeTab === 'create' && (
+                <motion.div
+                  className="event-form-overlay"
+                  role="dialog"
+                  aria-modal="true"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                >
+                  <motion.div
+                    initial={{ opacity: 0, y: 14, scale: 0.985 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 8, scale: 0.99 }}
+                  >
+                    <EventForm
+                      onClose={() => setActiveTab('dashboard')}
+                      onEventCreated={(event) => {
+                        refreshCalendarData({ type: 'created', event });
+                        setActiveTab('dashboard');
+                      }}
+                    />
+                  </motion.div>
+                </motion.div>
+              )}
             </AnimatePresence>
           </section>
         ) : !statusChecked ? (

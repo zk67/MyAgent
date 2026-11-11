@@ -1,9 +1,8 @@
-import { GoogleGenAI, Content } from '@google/genai';
+import Anthropic from '@anthropic-ai/sdk';
 import { SYSTEM_PROMPT, TOOLS, MODEL } from '@/agent-utils/config';
 
-export const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-});
+// The SDK already retries twice on overload (429, 5xx) before giving up.
+const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 export function getTodayInMontreal(date: Date = new Date()) {
   return new Intl.DateTimeFormat('en-CA', {
@@ -14,39 +13,37 @@ export function getTodayInMontreal(date: Date = new Date()) {
   }).format(date);
 }
 
-function buildSystemInstruction() {
-  return `${SYSTEM_PROMPT}\n\nDate d'aujourd'hui : ${getTodayInMontreal()} (fuseau horaire : America/Montreal).`;
+// The prompt never changes, so it is cached (together with the tools sent before it).
+// The date changes every day, so it goes in a second block, after the cached part.
+function buildSystem(): Anthropic.TextBlockParam[] {
+  return [
+    { type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } },
+    { type: 'text', text: `Date d'aujourd'hui : ${getTodayInMontreal()} (fuseau horaire : America/Montreal).` },
+  ];
 }
 
-function attachFile(contents: Content[], file: File, fileBytes: ArrayBuffer) {
-  const attachment = {
-    inlineData: {
-      mimeType: file.type || 'application/pdf',
-      data: Buffer.from(fileBytes).toString('base64'),
+// Turns an uploaded PDF into a block Claude can read.
+export async function pdfToBlock(file: File): Promise<Anthropic.DocumentBlockParam> {
+  const bytes = await file.arrayBuffer();
+
+  return {
+    type: 'document',
+    source: {
+      type: 'base64',
+      media_type: 'application/pdf',
+      data: Buffer.from(bytes).toString('base64'),
     },
   };
-
-  const lastUserMessage = [...contents].reverse().find((c) => c.role === 'user');
-  if (lastUserMessage) {
-    lastUserMessage.parts = [...(lastUserMessage.parts || []), attachment];
-  } else {
-    contents.push({ role: 'user', parts: [attachment] });
-  }
 }
 
-export async function askAgent(messages: Content[], file?: File) {
-  const contents = [...messages];
-
-  if (file) {
-    attachFile(contents, file, await file.arrayBuffer());
-  }
-
-  return ai.models.generateContent({
+export function askAgent(messages: Anthropic.MessageParam[]) {
+  return client.messages.create({
     model: MODEL,
-    contents,
-    config: {
-      systemInstruction: buildSystemInstruction(),
-      tools: TOOLS,
-    },
+    max_tokens: 16000,
+    system: buildSystem(),
+    tools: TOOLS,
+    messages,
+    // Also caches the conversation so far (and the PDF) for the next tool round.
+    cache_control: { type: 'ephemeral' },
   });
 }

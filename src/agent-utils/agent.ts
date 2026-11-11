@@ -1,11 +1,13 @@
-import { askAgent } from '@/services/model';
+import Anthropic from '@anthropic-ai/sdk';
+import { askAgent, pdfToBlock } from '@/services/model';
 import { executeTool } from '@/agent-utils/tools';
 import { ChatMessage } from '@/types/types';
-import { Content, FunctionCall, Part } from '@google/genai';
 import { createPendingDeletion } from '@/services/sessionService';
 import { getEventsById, isSessionError } from '@/services/calendarService';
 
 const MAX_TOOL_ROUNDS = 10;
+const TOOLS_THAT_CHANGE_CALENDAR = ['create_event', 'create_events', 'update_event'];
+const CONFIRM_DELETION_TEXT = 'Please review the events below and confirm before I delete them.';
 
 type ToolError = { error: string };
 
@@ -13,23 +15,69 @@ function isToolError(output: unknown): output is ToolError {
   return typeof output === 'object' && output !== null && 'error' in output;
 }
 
-// Runs a tool. If it fails, the error goes back to the model so it can
-// correct itself or explain the problem. Expired sessions are the exception:
-// they stop the request so the user can reconnect.
-async function runTool(call: FunctionCall, sessionId: string) {
+// ---------- Conversation ----------
+
+// Converts the chat into the format Claude expects.
+// Claude wants the conversation to start with a user message, so the greeting is skipped.
+async function buildHistory(messages: ChatMessage[], file?: File) {
+  const history: Anthropic.MessageParam[] = [];
+
+  for (const message of messages) {
+    const isGreeting = history.length === 0 && message.role === 'assistant';
+    if (isGreeting) continue;
+
+    history.push({ role: message.role, content: message.content });
+  }
+
+  // The PDF is sent together with the last user message.
+  if (file) {
+    const lastMessage = messages[messages.length - 1];
+    history[history.length - 1] = {
+      role: 'user',
+      content: [await pdfToBlock(file), { type: 'text', text: lastMessage.content }],
+    };
+  }
+
+  return history;
+}
+
+// Claude's reply can contain text and tool requests. These two helpers separate them.
+function getToolRequests(response: Anthropic.Message) {
+  const toolRequests: Anthropic.ToolUseBlock[] = [];
+
+  for (const block of response.content) {
+    if (block.type === 'tool_use') toolRequests.push(block);
+  }
+  return toolRequests;
+}
+
+function getAnswerText(response: Anthropic.Message) {
+  let text = '';
+
+  for (const block of response.content) {
+    if (block.type === 'text') text += block.text;
+  }
+  return text || "Sorry, I couldn't answer that. Please try again.";
+}
+
+// ---------- Tools ----------
+
+// Runs a tool. If it fails, the error is sent back to Claude so it can fix it
+// or explain the problem. An expired session stops everything so the user can reconnect.
+async function runTool(toolRequest: Anthropic.ToolUseBlock, sessionId: string) {
   try {
-    return await executeTool(call, sessionId);
+    return await executeTool(toolRequest, sessionId);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'The tool failed.';
     if (isSessionError(message)) throw error;
-    return { error: message } satisfies ToolError;
+    return { error: message };
   }
 }
 
-// Deleting is never done by the model. We save the request and ask the user to confirm.
-async function prepareDeletion(call: FunctionCall, sessionId: string) {
-  const ids = call.args?.eventIds;
-  const eventIds = Array.isArray(ids) ? ids.filter((id): id is string => typeof id === 'string') : [];
+// Claude never deletes by itself: we save the request and the user confirms it.
+async function prepareDeletion(toolRequest: Anthropic.ToolUseBlock, sessionId: string) {
+  const input = toolRequest.input as { eventIds?: string[] };
+  const eventIds = Array.isArray(input.eventIds) ? input.eventIds : [];
 
   try {
     const events = await getEventsById(sessionId, eventIds);
@@ -37,72 +85,66 @@ async function prepareDeletion(call: FunctionCall, sessionId: string) {
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to find these events.';
     if (isSessionError(message)) throw error;
-    return { error: message } satisfies ToolError;
+    return { error: message };
   }
 }
 
-// Convert the chat history to the format Gemini expects.
-function toGeminiContents(messages: ChatMessage[]): Content[] {
-  return messages.map((message) => ({
-    role: message.role === 'assistant' ? 'model' : 'user',
-    parts: [{ text: message.content }],
-  }));
+// Packs a tool's output in the format Claude expects.
+function toToolResult(toolRequest: Anthropic.ToolUseBlock, output: unknown): Anthropic.ToolResultBlockParam {
+  return {
+    type: 'tool_result',
+    tool_use_id: toolRequest.id,
+    content: JSON.stringify(output),
+    is_error: isToolError(output),
+  };
 }
 
-// Handles one tool request from the model. Returns a pending deletion
-// when the user must confirm, otherwise the tool output.
-async function handleToolCall(call: FunctionCall, sessionId: string) {
-  if (call.name === 'delete_event') {
-    const deletion = await prepareDeletion(call, sessionId);
-    
-    if ('pendingDeletion' in deletion) return { pendingDeletion: deletion.pendingDeletion };
-    return { output: deletion };
-  }
+// ---------- Agent loop ----------
 
-  const output = await runTool(call, sessionId);
-  const changesCalendar = call.name === 'create_event' || call.name === 'create_events' || call.name === 'update_event';
-  const changedCalendar = changesCalendar && !isToolError(output);
-  return { output, changedCalendar };
-}
-
+// Asks Claude, runs the tools it requests, sends back the results,
+// and repeats until Claude gives its final answer.
 export async function runAgent(messages: ChatMessage[], sessionId: string, file?: File) {
-  const contents = toGeminiContents(messages);
+  const history = await buildHistory(messages, file);
   let calendarModified = false;
-  let response = await askAgent(contents, file);
 
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
-    const functionCalls = response.functionCalls;
+    const response = await askAgent(history);
+    const toolRequests = getToolRequests(response);
 
-    // No tool requested: this is the final answer.
-    if (!functionCalls?.length) {
-      messages.push({ role: 'assistant', content: response.text ?? '' });
+    // No tool requested: Claude is done, this is its answer.
+    if (toolRequests.length === 0) {
+      messages.push({ role: 'assistant', content: getAnswerText(response) });
       return { messages, calendarModified };
     }
 
-    // Keep the model's tool request in the history.
-    const modelContent = response.candidates?.[0]?.content;
-    if (modelContent) contents.push(modelContent);
+    // Keep Claude's reply in the history, then run each tool it asked for.
+    history.push({ role: 'assistant', content: response.content });
+    const toolResults: Anthropic.ToolResultBlockParam[] = [];
 
-    // Run each requested tool and collect the results.
-    const results: Part[] = [];
-    for (const call of functionCalls) {
-      const result = await handleToolCall(call, sessionId);
+    for (const toolRequest of toolRequests) {
+      // A deletion pauses everything until the user confirms it.
+      if (toolRequest.name === 'delete_event') {
+        const deletion = await prepareDeletion(toolRequest, sessionId);
 
-      if ('pendingDeletion' in result) {
-        messages.push({
-          role: 'assistant',
-          content: 'Please review the events below and confirm before I delete them.',
-        });
-        return { messages, calendarModified, pendingDeletion: result.pendingDeletion };
+        if ('pendingDeletion' in deletion) {
+          messages.push({ role: 'assistant', content: CONFIRM_DELETION_TEXT });
+          return { messages, calendarModified, pendingDeletion: deletion.pendingDeletion };
+        }
+
+        toolResults.push(toToolResult(toolRequest, deletion));
+        continue;
       }
 
-      if (result.changedCalendar) calendarModified = true;
-      results.push({ functionResponse: { id: call.id, name: call.name, response: { output: result.output } } });
+      const output = await runTool(toolRequest, sessionId);
+
+      if (TOOLS_THAT_CHANGE_CALENDAR.includes(toolRequest.name) && !isToolError(output)) {
+        calendarModified = true;
+      }
+      toolResults.push(toToolResult(toolRequest, output));
     }
 
-    // Give the results to the model and let it continue.
-    contents.push({ role: 'user', parts: results });
-    response = await askAgent(contents);
+    // Send all the results back to Claude together, then loop again.
+    history.push({ role: 'user', content: toolResults });
   }
 
   throw new Error('Maximum agent iterations reached.');
