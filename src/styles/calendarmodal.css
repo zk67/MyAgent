@@ -258,3 +258,9 @@
     transform: none;
   }
 }
+
+/* Same scrollbar as the calendar timeline */
+.calendar-modal-panel,
+.calendar-modal-panel * {
+  scrollbar-color: var(--accent) transparent;
+}
