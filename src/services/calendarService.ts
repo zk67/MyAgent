@@ -1,7 +1,7 @@
 import { createOAuth2client } from '@/services/authService';
 import { CalendarEvent } from '@/types/types';
 import { getTodayInMontreal } from '@/services/model';
-import { google } from 'googleapis';
+import { google, calendar_v3 } from 'googleapis';
 import {
   deleteSession,
   getSessionTokens,
@@ -52,13 +52,17 @@ export async function getCalendarClient(sessionId: string) {
   return google.calendar({ version: 'v3', auth: authClient });
 }
 
+// "09:30" -> "10:30". The event must still end on the same day.
 function addOneHour(time: string) {
   const [hours, minutes] = time.split(':').map(Number);
   const totalMinutes = hours * 60 + minutes + 60;
   if (totalMinutes >= 24 * 60) {
     throw new Error('Event end time must be on the same day as its start time.');
   }
-  return `${Math.floor(totalMinutes / 60).toString().padStart(2, '0')}:${(totalMinutes % 60).toString().padStart(2, '0')}`;
+
+  const newHours = String(Math.floor(totalMinutes / 60)).padStart(2, '0');
+  const newMinutes = String(totalMinutes % 60).padStart(2, '0');
+  return `${newHours}:${newMinutes}`;
 }
 
 function validateEventInput(
@@ -131,6 +135,34 @@ function getNowInMontreal() {
   }).format(new Date());
 }
 
+// The event as Google Calendar expects it. Without an end time, it lasts one hour.
+function buildEventBody(
+  title: string,
+  startDate: string,
+  startTime: string,
+  endTime?: string,
+  description?: string,
+  location?: string,
+  reminder?: number,
+  showInUpcoming = true,
+): calendar_v3.Schema$Event {
+  const eventEndTime = endTime || addOneHour(startTime);
+
+  return {
+    summary: title,
+    description: description || '',
+    location: location || undefined,
+    start: { dateTime: `${startDate}T${startTime}:00`, timeZone: TIME_ZONE },
+    end: { dateTime: `${startDate}T${eventEndTime}:00`, timeZone: TIME_ZONE },
+    reminders: reminder
+      ? { useDefault: false, overrides: [{ method: 'email', minutes: reminder }] }
+      : undefined,
+    extendedProperties: {
+      private: { myAgentShowInUpcoming: showInUpcoming ? 'true' : 'false' },
+    },
+  };
+}
+
 function getEventDate(event: CalendarEvent): string | null {
   if (event.start.date) return event.start.date;
 
@@ -166,34 +198,9 @@ export async function newEvent(
   }
 
   const calendar = await getCalendarClient(sessionId);
-  const eventEndTime = endTime || addOneHour(startTime);
+  const requestBody = buildEventBody(title, startDate, startTime, endTime, description, location, reminder, showInUpcoming);
 
-  const response = await calendar.events.insert({
-    calendarId: 'primary',
-    requestBody: {
-      summary: title,
-      description: description || '',
-      location: location || undefined,
-      start: {
-        dateTime: `${startDate}T${startTime}:00`,
-        timeZone: TIME_ZONE,
-      },
-      end: {
-        dateTime: `${startDate}T${eventEndTime}:00`,
-        timeZone: TIME_ZONE,
-      },
-      reminders: reminder
-        ? {
-            useDefault: false,
-            overrides: [{ method: 'email', minutes: reminder }],
-          }
-        : undefined,
-      extendedProperties: {
-        private: { myAgentShowInUpcoming: showInUpcoming ? 'true' : 'false' },
-      },
-    },
-  });
-
+  const response = await calendar.events.insert({ calendarId: 'primary', requestBody });
   return response.data;
 }
 
@@ -212,21 +219,7 @@ export async function newEventWithRecurrence(
   validateEventInput(title, startDate, startTime, endTime, description, location, reminder);
 
   const calendar = await getCalendarClient(sessionId);
-  const eventEndTime = endTime || addOneHour(startTime);
-
-  const requestBody: Record<string, unknown> = {
-    summary: title,
-    description: description || '',
-    location: location || undefined,
-    start: { dateTime: `${startDate}T${startTime}:00`, timeZone: TIME_ZONE },
-    end: { dateTime: `${startDate}T${eventEndTime}:00`, timeZone: TIME_ZONE },
-    reminders: reminder
-      ? { useDefault: false, overrides: [{ method: 'email', minutes: reminder }] }
-      : undefined,
-    extendedProperties: {
-      private: { myAgentShowInUpcoming: showInUpcoming ? 'true' : 'false' },
-    },
-  };
+  const requestBody = buildEventBody(title, startDate, startTime, endTime, description, location, reminder, showInUpcoming);
 
   if (recurrence) {
     // Accept "RRULE:..." or just "FREQ=WEEKLY;COUNT=13" etc.
