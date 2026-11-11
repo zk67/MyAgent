@@ -208,3 +208,10 @@
 .timeline-event.blue { background:#9dc8e1; border-color:#71a8c8; }
 .timeline-event.coral { background:#e5a6b8; border-color:#cb7f96; }
 .timeline-event { color:#30343f; }
+
+/* Event pills: always readable whatever their height */
+.timeline-event { display:flex; flex-direction:column; justify-content:flex-start; box-sizing:border-box; }
+.timeline-event strong { white-space:normal; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3; line-clamp:3; overflow:hidden; line-height:1.2; }
+.timeline-event span { flex-shrink:0; }
+.timeline-event.is-compact { justify-content:center; padding:2px 6px; }
+.timeline-event.is-compact strong { white-space:nowrap; display:block; text-overflow:ellipsis; -webkit-line-clamp:1; line-clamp:1; }

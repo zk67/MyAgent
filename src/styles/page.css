@@ -164,3 +164,17 @@
   background: #23262c;
   border-color: #383d46;
 }
+
+/* Upcoming events: scroll inside the card when the list is too long */
+.schedule-sidebar .upcoming-card {
+  display: flex;
+  flex-direction: column;
+}
+.schedule-sidebar .upcoming-card .side-card-heading {
+  flex-shrink: 0;
+}
+.schedule-sidebar .upcoming-list {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+}
