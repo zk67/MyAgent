@@ -223,12 +223,18 @@ button {
 .icon-button {
   display: inline-grid;
   place-items: center;
+  flex-shrink: 0;
   width: 32px;
   height: 32px;
+  padding: 0; /* phone browsers add padding to buttons, which pushes the icon off-center */
   border: 1px solid var(--border);
   border-radius: 50%;
   background: transparent;
   color: var(--text-secondary);
+}
+
+.icon-button svg {
+  display: block;
 }
 
 .icon-button:hover {

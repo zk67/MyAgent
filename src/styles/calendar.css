@@ -203,3 +203,28 @@
   background: var(--event-madder);
   color: var(--event-madder-ink);
 }
+
+/* Phones: the week is wider than the screen, so it slides sideways.
+   The hours column stays pinned on the left while the days move. */
+@media (max-width: 860px) {
+  .calendar-header {
+    flex-wrap: wrap;
+    padding: 14px 16px;
+  }
+
+  .calendar-header h2 {
+    font-size: 28px;
+  }
+
+  .timeline-scroll {
+    overflow-x: auto;
+  }
+
+  .time-axis,
+  .timeline-header .timezone {
+    position: sticky;
+    left: 0;
+    z-index: 3;
+    background: var(--surface);
+  }
+}

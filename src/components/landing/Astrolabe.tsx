@@ -18,21 +18,39 @@ function pointAt(radius: number, angleInDegrees: number) {
   return { x: round(CENTER + radius * Math.cos(angle)), y: round(CENTER + radius * Math.sin(angle)) };
 }
 
-// Angle of the hour hand for the current time, on a 12-hour dial.
-function currentHourAngle() {
-  const now = new Date();
-  return ((now.getHours() % 12) + now.getMinutes() / 60) * 30;
+function secondsSinceMidnight(date: Date) {
+  return date.getHours() * 3600 + date.getMinutes() * 60 + date.getSeconds();
 }
 
-// An engraved astrolabe whose single hand shows the real time.
+// A hand drawn pointing at XII, then turned to its angle. The turn is animated in CSS.
+function Hand({ className, length, tail = 0, angle }: { className: string; length: number; tail?: number; angle: number }) {
+  return (
+    <line
+      className={`astrolabe-hand ${className}`}
+      x1={CENTER}
+      y1={CENTER + tail}
+      x2={CENTER}
+      y2={CENTER - length}
+      style={{ transform: `rotate(${angle}deg)` }}
+    />
+  );
+}
+
+// An engraved astrolabe whose hands show the real time.
 export function Astrolabe() {
-  // The hand is only drawn in the browser, so the server and client HTML match.
-  const [handAngle, setHandAngle] = useState<number | null>(null);
+  // Seconds since midnight. It keeps counting up (even past midnight),
+  // so the hands always turn forward and never spin back to XII.
+  // The hands are only drawn in the browser, so the server and client HTML match.
+  const [seconds, setSeconds] = useState<number | null>(null);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setHandAngle(currentHourAngle());
-    const timer = setInterval(() => setHandAngle(currentHourAngle()), 60_000);
+    const startTime = Date.now();
+    const startSeconds = secondsSinceMidnight(new Date());
+
+    // Counting from the start time (not +1 each tick) stays right even if the tab sleeps.
+    const tick = () => setSeconds(startSeconds + Math.round((Date.now() - startTime) / 1000));
+    tick();
+    const timer = setInterval(tick, 1000);
     return () => clearInterval(timer);
   }, []);
 
@@ -44,8 +62,6 @@ export function Astrolabe() {
     const inner = pointAt(isHour ? 170 : 178, angle);
     return <line key={index} x1={outer.x} y1={outer.y} x2={inner.x} y2={inner.y} strokeWidth={isHour ? 1.4 : 0.8} />;
   });
-
-  const handTip = handAngle === null ? null : pointAt(148, handAngle);
 
   return (
     <svg className="astrolabe" viewBox="0 0 400 400" role="img" aria-label="An astrolabe showing the current time">
@@ -71,7 +87,14 @@ export function Astrolabe() {
         );
       })}
 
-      {handTip && <line className="astrolabe-hand" x1={CENTER} y1={CENTER} x2={handTip.x} y2={handTip.y} />}
+      {/* One full turn: 12 hours, 1 hour, 1 minute */}
+      {seconds !== null && (
+        <g className="astrolabe-hands">
+          <Hand className="is-hour" length={110} angle={seconds / 120} />
+          <Hand className="is-minute" length={160} angle={seconds / 10} />
+          <Hand className="is-second" length={170} tail={26} angle={seconds * 6} />
+        </g>
+      )}
       <circle className="astrolabe-pin" cx={CENTER} cy={CENTER} r={5} />
     </svg>
   );

@@ -217,3 +217,16 @@
   width: 100%;
   padding: 13px;
 }
+
+/* Phones: the card gets a real height, so the list scrolls inside it
+   instead of being cut off. */
+@media (max-width: 860px) {
+  .upcoming-card {
+    flex: none;
+    height: 300px;
+  }
+
+  .upcoming-list {
+    padding-right: 6px;
+  }
+}
