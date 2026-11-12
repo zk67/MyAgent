@@ -11,23 +11,31 @@ type EventFormProps = {
   onClose?: () => void;
 };
 
-function getLocalDateValue() {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+// 7 -> "07"
+function twoDigits(value: number) {
+  return String(value).padStart(2, '0');
 }
 
-function getDefaultEventTimes() {
+// Today as "YYYY-MM-DD", in the user's time zone.
+function getLocalDateValue() {
   const now = new Date();
-  const start = new Date(now);
+  return `${now.getFullYear()}-${twoDigits(now.getMonth() + 1)}-${twoDigits(now.getDate())}`;
+}
+
+function formatTime(date: Date) {
+  return `${twoDigits(date.getHours())}:${twoDigits(date.getMinutes())}`;
+}
+
+// The form starts at the next minute and lasts one hour (but never past midnight).
+function getDefaultEventTimes() {
+  const start = new Date();
   if (start.getSeconds() > 0 || start.getMilliseconds() > 0) start.setMinutes(start.getMinutes() + 1);
   start.setSeconds(0, 0);
-  const startTime = `${String(start.getHours()).padStart(2, '0')}:${String(start.getMinutes()).padStart(2, '0')}`;
+
   const end = new Date(start.getTime() + 60 * 60 * 1000);
   const crossesMidnight = end.getDate() !== start.getDate();
-  const endTime = crossesMidnight
-    ? '23:59'
-    : `${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`;
-  return { startTime, endTime };
+
+  return { startTime: formatTime(start), endTime: crossesMidnight ? '23:59' : formatTime(end) };
 }
 
 export function EventForm({ onEventCreated, onClose }: EventFormProps) {
