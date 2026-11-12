@@ -23,6 +23,7 @@
   min-height: 0;
   display: grid;
   grid-template-columns: minmax(240px, 290px) minmax(420px, 1fr) minmax(300px, 380px);
+  grid-template-rows: minmax(0, 1fr); /* the columns fill the window height and scroll inside */
   gap: 16px;
   padding: 4px clamp(12px, 2vw, 24px) 20px;
 }
