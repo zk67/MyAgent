@@ -19,10 +19,13 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 myagent && \
     adduser --system --uid 1001 myagent
 
+# The app writes its image cache in .next/cache, so that folder must belong to the app user.
+RUN mkdir .next && chown myagent:myagent .next
+
 # Copy the standalone output and static assets.
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder --chown=myagent:myagent /app/.next/standalone ./
+COPY --from=builder --chown=myagent:myagent /app/.next/static ./.next/static
 COPY --from=builder /app/migrations ./migrations
 
 # Script that runs migrations then starts the app.
